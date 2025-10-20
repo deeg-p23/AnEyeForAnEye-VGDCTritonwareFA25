@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8b097c772430c143b60c578e0af268c, type: 3}
+  m_Name: WitchB
+  m_EditorClassIdentifier: 
+  spriteTexture: {fileID: 2800000, guid: c6ca7dc77490486418ca2d1a27a88bb8, type: 3}
+  sprites:
+  - {fileID: 8025452540839387170, guid: c6ca7dc77490486418ca2d1a27a88bb8, type: 3}
+  - {fileID: 5049882247852453360, guid: c6ca7dc77490486418ca2d1a27a88bb8, type: 3}
+  - {fileID: -8350814349318313426, guid: c6ca7dc77490486418ca2d1a27a88bb8, type: 3}
+  - {fileID: 2439871536693597247, guid: c6ca7dc77490486418ca2d1a27a88bb8, type: 3}
+  - {fileID: -6221507862386598254, guid: c6ca7dc77490486418ca2d1a27a88bb8, type: 3}
+  - {fileID: -361387781553804253, guid: c6ca7dc77490486418ca2d1a27a88bb8, type: 3}
+  - {fileID: 7580261091060595055, guid: c6ca7dc77490486418ca2d1a27a88bb8, type: 3}
+  - {fileID: 3980081979340227695, guid: c6ca7dc77490486418ca2d1a27a88bb8, type: 3}
+  - {fileID: -6130909181497537799, guid: c6ca7dc77490486418ca2d1a27a88bb8, type: 3}
+  - {fileID: -4301071709266196532, guid: c6ca7dc77490486418ca2d1a27a88bb8, type: 3}
+  - {fileID: -7259778462366948484, guid: c6ca7dc77490486418ca2d1a27a88bb8, type: 3}
+  - {fileID: -422007720381187578, guid: c6ca7dc77490486418ca2d1a27a88bb8, type: 3}
+  - {fileID: -6680843935874589933, guid: c6ca7dc77490486418ca2d1a27a88bb8, type: 3}
+  - {fileID: -7992793325328983683, guid: c6ca7dc77490486418ca2d1a27a88bb8, type: 3}
