@@ -8,7 +8,7 @@ public class CharacterSprite : ScriptableObject
     
     public Sprite[] sprites;
     
-    void OnValidate()
+    void InitializeSprites()
     {
         if (!spriteTexture) return;
         sprites = Resources.LoadAll<Sprite>("Sprites/"+spriteTexture.name);

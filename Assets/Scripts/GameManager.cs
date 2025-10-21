@@ -90,4 +90,9 @@ public class GameManager : MonoBehaviour
         right.SetItem(items[1]);
         left.SetItem(items[2]);
     }
+
+    public void SpinWheel(int id)
+    {
+        return;
+    }
 }
