@@ -29,6 +29,12 @@ public class PlayerController : MonoBehaviour
     private float _ravenPortion = 0f;
     private float _heartPortion = 0f;
     private float _stirProgress = 0f;
+    private float _eyeplotGrowth = 0f; // [0,9] by seconds elapsed while not harvesting
+    private float _harvestProgress = 0f; // [0,1] by frames pressed while harvesting
+    
+    // key counters
+    private int _totalEyes = 0;
+    private int _totalScore = 0;
     
     // inputs initialized by gamemanager
     public Dictionary<String, KeyCode> Inputs;
@@ -50,27 +56,29 @@ public class PlayerController : MonoBehaviour
         switch (_state)
         {
             case States.Idle:
-                ActiveActionInput();
+                ActiveActionChange();
                 break;
             case States.Grabbing:
                 if (_grabTimer <= 0f) { _state = States.Idle; }
                 break;
             case States.Pouring:
-                activeActionPerformed = ActiveActionInput();
-                if (activeActionPerformed) EndPourEvent();
+                activeActionPerformed = ActiveActionChange();
+                if (activeActionPerformed) EndPourEvent(); // cancelled pour
                 break;
             case States.Stirring:
-                activeActionPerformed = ActiveActionInput();
-                if (activeActionPerformed) EndStirEvent();
+                activeActionPerformed = ActiveActionChange();
+                if (activeActionPerformed) EndStirEvent(); // canelled stir
                 break;
             case States.Harvesting:
+                activeActionPerformed = ActiveActionChange();
+                if (activeActionPerformed) EndHarvestEvent(false); // cancelled harvest (incomplete)
                 break;
         }
     }
 
     // checking if a new active action is occurring (grabbing, harvesting, or mixing)
     // active actions are ones that interrupt the state of idle or stirring
-    bool ActiveActionInput()
+    bool ActiveActionChange()
     {
         bool activeActionPerformed = false;
         if (Input.GetKeyDown(Inputs["GrabUp"]))
@@ -117,7 +125,11 @@ public class PlayerController : MonoBehaviour
         }
         else if (Input.GetKeyDown(Inputs["Harvest"]))
         {
-            activeActionPerformed = true;
+            if (_state != States.Harvesting)
+            {
+                activeActionPerformed = true; // may need to be placed within this next state check conditional?
+                StartHarvestEvent();
+            }
         }
 
         return activeActionPerformed;
@@ -229,12 +241,43 @@ public class PlayerController : MonoBehaviour
                 
                 break;
             case States.Harvesting:
+                if (Input.GetKey(Inputs["Harvest"]))
+                {
+                    _img.sprite = character.sprites[14];
+                    if (Input.GetKeyDown(Inputs["Harvest"]))
+                    {
+                        _harvestProgress += 0.1f;
+                        GameManager.Instance.SetHarvestMeter(_id, _harvestProgress);
+                    }
+                }
+                else _img.sprite = character.sprites[15];
+                
+                if (_harvestProgress >= 1f)
+                {
+                    EndHarvestEvent(true);
+                }
+                
                 break;
         }
         
+        // stir progress updating
         if (!activelyStirring) _stirProgress -= Time.deltaTime * 5f;
         _stirProgress = Mathf.Clamp(_stirProgress, 0f, 100f);
         GameManager.Instance.SetStirMeter(_id, _stirProgress);
+        
+        // eyeplot updating
+        if (_state != States.Harvesting)
+        {
+            _eyeplotGrowth += Time.deltaTime;
+            _eyeplotGrowth = Mathf.Clamp(_eyeplotGrowth, 0f, 9f);
+            GameManager.Instance.AnimateEyeplot(_id, _eyeplotGrowth);
+        }
+        
+        // spin action
+        if (Input.GetKeyDown(Inputs["Spin"]))
+        {
+            GameManager.Instance.SpinWheel(_id);
+        }
     }
 
     private void StartPourEvent()
@@ -259,6 +302,32 @@ public class PlayerController : MonoBehaviour
     {
         // do not set state to idle, EndStirEvent() always called after state -> idle due to active action
         GameManager.Instance.HideMetronome(_id);
+    }
+
+    private void StartHarvestEvent()
+    {
+        if (_eyeplotGrowth < 3f) return; // not enough growth to harvest
+            
+        _state = States.Harvesting;
+        _harvestProgress = 0f;
+        GameManager.Instance.ShowHarvestMeter(_id);
+        GameManager.Instance.SetHarvestMeter(_id, _harvestProgress);
+    }
+
+    private void EndHarvestEvent(bool completed)
+    {
+        // do not set state to idle IF incomplete, EndHarvestEvent() always called after state -> idle due to active action
+        // if complete, set to idle
+        if (completed) _state = States.Idle;
+
+        _harvestProgress = 0f;
+        GameManager.Instance.HideHarvestMeter(_id);
+
+        int plotRemainder = Mathf.FloorToInt(_eyeplotGrowth / 3);
+        _totalEyes += plotRemainder;
+        _eyeplotGrowth = Mathf.Clamp(_eyeplotGrowth - plotRemainder, 0f, 1f);
+        
+        GameManager.Instance.SetEyeCounter(_id, _totalEyes);
     }
     
     private void StartIngredientGrab(IngredientItem ingredient)
@@ -310,4 +379,15 @@ public class PlayerController : MonoBehaviour
     }
     
     public void SetID(int id) { _id = id; }
+
+    public int GetTotalEyes()
+    {
+        return _totalEyes; 
+    }
+
+    public void SetTotalEyes(int value)
+    {
+        _totalEyes = value;
+        GameManager.Instance.SetEyeCounter(_id, _totalEyes);
+    }
 } 

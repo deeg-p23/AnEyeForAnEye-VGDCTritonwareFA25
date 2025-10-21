@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Random = Unity.Mathematics.Random;
@@ -44,7 +45,45 @@ public class GameManager : MonoBehaviour
     private Slider _pourSliderB;
     public Slider stirSliderB;
 
+    public Image eyeStem1A;
+    public Image eyeStem2A;
+    public Image eyeStem3A;
+    public Image eyeStem1B;
+    public Image eyeStem2B;
+    public Image eyeStem3B;
+
+    public CharacterSprite eyePlotSprites;
+    public GameObject harvestMeterA;
+    public GameObject harvestMeterB;
+    private Slider _harvestSliderA;
+    private Slider _harvestSliderB;
+
+    public TMP_Text eyeCounterA;
+    public TMP_Text eyeCounterB;
+    
+    int[][] _eyePlotSpriteIndices = new int[][]
+    {
+        new int[] {0, 0, 0}, // 0
+        new int[] {1, 0, 0}, // 1
+        new int[] {2, 0, 0}, // 2
+        new int[] {3, 0, 0}, // 3
+        new int[] {3, 1, 0}, // 4
+        new int[] {3, 2, 0}, // 5
+        new int[] {3, 3, 0}, // 6
+        new int[] {3, 3, 1}, // 7
+        new int[] {3, 3, 2}, // 8
+        new int[] {3, 3, 3}  // 9
+    };
+
     public RectTransform clockPivot;
+    
+    // SABOTAGE SPINNING VARS
+    private float _spinTime; // spinning lasts 4 seconds
+    private int _spinnerID; // 0 if player A spun, 1 if player B spun
+    private bool _spinning; // if true, wheels cannot be re-spun
+
+    public RectTransform sabotageWheel;
+    public RectTransform paymentWheel;
     
     void Start()
     {
@@ -59,9 +98,13 @@ public class GameManager : MonoBehaviour
         metronomeB.SetActive(false);
         pourMeterA.SetActive(false);
         pourMeterB.SetActive(false);
+        harvestMeterA.SetActive(false);
+        harvestMeterB.SetActive(false);
         
         _pourSliderA = pourMeterA.GetComponent<Slider>();
         _pourSliderB = pourMeterB.GetComponent<Slider>();
+        _harvestSliderA = harvestMeterA.GetComponent<Slider>();
+        _harvestSliderB = harvestMeterB.GetComponent<Slider>();
         
         // adding default player inputs to input dictionary
         playerA.Inputs = new Dictionary<string, KeyCode>();
@@ -116,6 +159,23 @@ public class GameManager : MonoBehaviour
         // clock
         float clockAngle = (Time.time / 300f) * -360f;
         clockPivot.rotation = Quaternion.Euler(0f, 0f, clockAngle);
+        
+        // wheels
+        if (_spinning)
+        {
+            if (_spinTime < 5)
+            {
+                _spinTime += Time.deltaTime;
+                float k = 0.25f;
+                float spinSpeed = 2000 * (1 - Mathf.Exp(-k * Mathf.Pow(5-_spinTime, 2)));
+                sabotageWheel.rotation = Quaternion.Euler(0f, 0f, sabotageWheel.eulerAngles.z + spinSpeed * Time.deltaTime);
+                paymentWheel.rotation = Quaternion.Euler(0f, 0f, paymentWheel.eulerAngles.z - spinSpeed * Time.deltaTime);
+            }
+            else
+            {
+                EndSpinEvent();
+            }
+        }
     }
 
     public float RegisterStirTick(int id)
@@ -173,7 +233,69 @@ public class GameManager : MonoBehaviour
 
     public void SpinWheel(int id)
     {
-        return;
+        if (_spinning) return;
+        
+        _spinnerID = id;
+        _spinning = true;
+        _spinTime = 0f;
+    }
+
+    public void EndSpinEvent()
+    {
+        _spinning = false;
+        
+        float sabotageAngle = sabotageWheel.eulerAngles.z;
+        sabotageAngle = (sabotageAngle % 360f + 360f) % 360f;
+        sabotageAngle = Mathf.Clamp(sabotageAngle, 0f, 360f);
+        float paymentAngle = paymentWheel.eulerAngles.z;
+        paymentAngle = (paymentAngle % 360f + 360f) % 360f;
+        paymentAngle = Mathf.Clamp(paymentAngle, 0f, 360f);
+        
+        // sabotage range
+        if ((sabotageAngle >= 0 && sabotageAngle < 45) || (sabotageAngle >= 180 && sabotageAngle < 225))
+            Debug.Log("time sabotage");
+        else if ((sabotageAngle >= 45 && sabotageAngle < 90) || (sabotageAngle >= 225 && sabotageAngle < 270))
+            Debug.Log("swap sabotage");
+        else if ((sabotageAngle >= 90 && sabotageAngle < 135) || (sabotageAngle >= 270 && sabotageAngle < 315))
+            Debug.Log("ink sabotage");
+        else if ((sabotageAngle >= 135 && sabotageAngle <= 180) || (sabotageAngle >= 315 && sabotageAngle <= 360))
+            Debug.Log("mash sabotage");
+
+        // payment range
+        int eyeballCost = 30;
+        if (paymentAngle >= 0 && paymentAngle < 45)
+            eyeballCost = 18;
+        else if (paymentAngle >= 45 && paymentAngle < 90)
+            eyeballCost = 10;
+        else if (paymentAngle >= 90 && paymentAngle < 135)
+            eyeballCost = 8;
+        else if (paymentAngle >= 135 && paymentAngle < 180)
+            eyeballCost = 30;
+        else if (paymentAngle >= 180 && paymentAngle < 225)
+            eyeballCost = 4;
+        else if (paymentAngle >= 225 && paymentAngle < 270)
+            eyeballCost = 6;
+        else if (paymentAngle >= 270 && paymentAngle < 315)
+            eyeballCost = 20;
+        else if (paymentAngle >= 315 && paymentAngle <= 360)
+            eyeballCost = 15;
+        Debug.Log($"Eyeball Cost: {eyeballCost}");
+
+        int sabotagedID = (_spinnerID == 0) ? 1 : 0;
+        if (_spinnerID == 0)
+        {
+            if (playerA.GetTotalEyes() >= eyeballCost) playerA.SetTotalEyes(playerA.GetTotalEyes() - eyeballCost); // remove cost if can afford
+            else sabotagedID = 0; // self-sabotage if cant afford
+        }
+        else if (_spinnerID == 1)
+        {
+            if (playerB.GetTotalEyes() >= eyeballCost) playerB.SetTotalEyes(playerB.GetTotalEyes() - eyeballCost);
+            else sabotagedID = 1; // self-sabotage if cant afford
+        }
+
+        Debug.Log($"Player Sabotaged: {sabotagedID}");
+
+        // call sabotage on the sabotagedID
     }
 
     public void ShowMetronome(int id)
@@ -232,5 +354,47 @@ public class GameManager : MonoBehaviour
     {
         if (id == 0) pourMeterA.SetActive(false);
         else if (id == 1) pourMeterB.SetActive(false);
+    }
+
+    public void ShowHarvestMeter(int id)
+    {
+        if (id == 0) harvestMeterA.SetActive(true);
+        else if (id == 1) harvestMeterB.SetActive(true);
+    }
+
+    public void SetHarvestMeter(int id, float value)
+    {
+        if (id == 0) _harvestSliderA.value = value;
+        else if (id == 1) _harvestSliderB.value = value;
+    }
+    
+    public void HideHarvestMeter(int id)
+    {
+        if (id == 0) harvestMeterA.SetActive(false);
+        else if (id == 1) harvestMeterB.SetActive(false);
+    }
+
+    public void AnimateEyeplot(int id, float eyeplotGrowth)
+    {
+        int idx = (int)Mathf.Round(Mathf.Clamp(eyeplotGrowth, 0f, 9f));
+        int[] result = _eyePlotSpriteIndices[idx];
+        if (id == 0)
+        {
+            eyeStem1A.sprite = eyePlotSprites.sprites[result[0]];
+            eyeStem2A.sprite = eyePlotSprites.sprites[result[1]];
+            eyeStem3A.sprite = eyePlotSprites.sprites[result[2]];
+        }
+        else if (id == 1)
+        {
+            eyeStem1B.sprite = eyePlotSprites.sprites[result[0]];
+            eyeStem2B.sprite = eyePlotSprites.sprites[result[1]];
+            eyeStem3B.sprite = eyePlotSprites.sprites[result[2]];       
+        }
+    }
+
+    public void SetEyeCounter(int id, int value)
+    {
+        if (id == 0) eyeCounterA.text = "" + value;
+        else if (id == 1) eyeCounterB.text = "" + value;
     }
 }
