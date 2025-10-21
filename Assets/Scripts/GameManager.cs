@@ -1,10 +1,14 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using Random = Unity.Mathematics.Random;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
+
+    public UnityEngine.UI.Image inkSabotage; //check this
 
     public static float GrabTimerMax = 0.15f;
     public static float MixFrameMax = 0.1f;
@@ -74,22 +78,44 @@ public class GameManager : MonoBehaviour
         RandomizeIngredients(upItemA, rightItemA, leftItemA, itemsToStore, rng);
         RandomizeIngredients(upItemB, rightItemB, leftItemB, itemsToStore, rng);
     }
-    
-    private void RandomizeIngredients(IngredientItem up, IngredientItem right, IngredientItem left, 
+
+    private void RandomizeIngredients(IngredientItem up, IngredientItem right, IngredientItem left,
         IngredientItem.ItemType[] source, System.Random rng)
     {
         var items = (IngredientItem.ItemType[])source.Clone();
-        
+
         for (int i = source.Length - 1; i > 0; i--)
         {
             int j = rng.Next(0, i + 1);
             (source[i], source[j]) = (source[j], source[i]);
         }
-        
+
         up.SetItem(items[0]);
         right.SetItem(items[1]);
         left.SetItem(items[2]);
     }
+
+    public void InkBlockScreen(float duration = 10f) 
+    { 
+        StartCoroutine(InkBlockCoroutine(duration)); 
+    } 
+    
+    private IEnumerator InkBlockCoroutine(float duration) 
+    { 
+        if(inkSabotage == null) 
+        {
+            Debug.LogWarning("InkSabotage isn't assigned in GameManager");
+            yield break;
+        } 
+
+        //ink screen
+        inkSabotage.enabled = true;
+        yield return new WaitForSeconds(duration);
+
+        //hide ink
+        inkSabotage.enabled = false;
+    }
+    
 
     public void SpinWheel(int id)
     {
