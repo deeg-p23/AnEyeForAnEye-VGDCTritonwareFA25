@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Threading.Tasks;
 using Unity.Cinemachine;
+using UnityEngine.SceneManagement;
 
 public class SceneManager : MonoBehaviour
 {
@@ -18,9 +19,12 @@ public class SceneManager : MonoBehaviour
 
     // --- Pause Controls Modal ---
     [SerializeField] private GameObject PanelMenuImage;    // the main pause menu panel/image
-
+    
     void Update()
     {
+        // Set global shader param for loading screen
+        Shader.SetGlobalFloat("_UnscaledTime", Time.unscaledTime);
+        
         if (!pauseScreenAccessable) return;
 
         if (Input.GetKeyDown(KeyCode.Escape))
@@ -63,6 +67,8 @@ public class SceneManager : MonoBehaviour
 
     void Start()
     {
+        StartCoroutine(LateShaderUpdater());
+        
         if (Instance == null)
         {
             Instance = this;
@@ -162,12 +168,12 @@ public class SceneManager : MonoBehaviour
         }
     }
 
-    public async void LoadScene(string sceneName)
+    public async Task LoadScene(string sceneName)
     {
         // player cannot toggle pause, and non-time-based processes in game remain paused
         pauseScreenAccessable = false;
 
-        AsyncOperation scene = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(sceneName);
+        AsyncOperation scene = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
         scene.allowSceneActivation = false;
 
         loadingScreen.SetActive(true);
@@ -183,7 +189,7 @@ public class SceneManager : MonoBehaviour
 
         while (!scene.isDone)
         {
-            await Awaitable.NextFrameAsync();
+            await Task.Yield(); 
         }
 
         HandleManagerStates(sceneName);
@@ -192,5 +198,19 @@ public class SceneManager : MonoBehaviour
         await OpenSceneFromLoad();
 
         loadingScreen.SetActive(false);
+    }
+    
+    public async void CloseSceneLoad()
+    {
+        
+    }
+    
+    private IEnumerator LateShaderUpdater()
+    {
+        while (true)
+        {
+            Shader.SetGlobalFloat("_UnscaledTime", Time.unscaledTime);
+            yield return null;
+        }
     }
 }
