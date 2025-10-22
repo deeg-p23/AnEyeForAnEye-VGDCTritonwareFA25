@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 70ca012c3d43f2c4c9477bca12053333
+guid: 75eb08ef4a2e73348931270aaffc1434
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 5114522206898191093
-    second: Clock_hand_0
+      213: -6496715699370282178
+    second: right_char_neutral_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -37,7 +37,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 2
+    filterMode: 1
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -72,10 +72,10 @@ TextureImporter:
   platformSettings:
   - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 1024
-    resizeAlgorithm: 1
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 2
+    textureCompression: 1
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -100,13 +100,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Clock_hand_0
+      name: right_char_neutral_0
       rect:
         serializedVersion: 2
-        x: 240
-        y: 204
-        width: 20
-        height: 91
+        x: 60
+        y: 52
+        width: 380
+        height: 395
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -115,8 +115,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 5fa730a69de6af640800000000000000
-      internalID: 5114522206898191093
+      spriteID: e33b4541e7707d5a0800000000000000
+      internalID: -6496715699370282178
       vertices: []
       indices: 
       edges: []
@@ -135,7 +135,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Clock_hand_0: 5114522206898191093
+      right_char_neutral_0: -6496715699370282178
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
