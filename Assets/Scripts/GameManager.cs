@@ -815,3 +815,27 @@ public class GameManager : MonoBehaviour
         else if (id == 1) scoreCounterB.text = "" + value;
     }
 }
+
+/*
+Holding changes as comment for now 
+
+    //adding here for now, will move if causes issues
+     pressedKey = GetComponent<Image>();
+     
+
+        //testing one key first 😞
+        if (Input.GetKeyDown(KeyCode.W))
+        {
+            pressedKey.sprite = pressedW;
+        }
+        else if (Input.GetKeyUp(KeyCode.W))
+        {
+            pressedKey.sprite = originalW;
+        }
+
+    //keycap(s)
+    public Sprite originalW;
+    public Sprite pressedW;
+    private Image pressedKey;
+
+*/
