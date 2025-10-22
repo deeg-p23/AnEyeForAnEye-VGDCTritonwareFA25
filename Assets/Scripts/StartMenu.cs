@@ -24,6 +24,11 @@ public class StartMenu : MonoBehaviour
 
     public Button controlsButton;
 
+    void Start()
+    {
+        SoundManager.Instance.Play(SoundManager.SoundType.BG_Title);
+    }
+
     void Awake()
     {
         if (logo == null) logo = GetComponent<RectTransform>();

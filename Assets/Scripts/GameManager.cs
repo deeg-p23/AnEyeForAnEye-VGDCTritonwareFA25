@@ -601,6 +601,8 @@ public class GameManager : MonoBehaviour
             return;
         }
         
+        SoundManager.Instance.Play(SoundManager.SoundType.Spin);
+        
         _spinnerID = id;
         
         if (_spinnerID == 0) cm.SpawnCallout(0, "Spinning . . .", CalloutManager.recipe);
@@ -673,21 +675,25 @@ public class GameManager : MonoBehaviour
         {
             SlowStirTempo(sabotagedID);
             cm.SpawnCallout(sabotagedID, "Tempo slowed", CalloutManager.negative);
+            SoundManager.Instance.Play(SoundManager.SoundType.Sab_Slow);
         }
         else if ((sabotageAngle >= 45 && sabotageAngle < 90) || (sabotageAngle >= 225 && sabotageAngle < 270))
         {
             RandomizeIngredientSabotage(sabotagedID);    
             cm.SpawnCallout(sabotagedID, "Ingredients swapped", CalloutManager.negative);
+            SoundManager.Instance.Play(SoundManager.SoundType.Sab_Swap);
         }
         else if ((sabotageAngle >= 90 && sabotageAngle < 135) || (sabotageAngle >= 270 && sabotageAngle < 315))
         {
             InkBlockScreen(sabotagedID);
             cm.SpawnCallout(sabotagedID, "Blinded by ink", CalloutManager.negative);
+            SoundManager.Instance.Play(SoundManager.SoundType.Sab_Ink);
         }
         else if ((sabotageAngle >= 135 && sabotageAngle <= 180) || (sabotageAngle >= 315 && sabotageAngle <= 360))
         {
             StickySabotage(sabotagedID);
             cm.SpawnCallout(sabotagedID, "Ingredients stickied", CalloutManager.negative);
+            SoundManager.Instance.Play(SoundManager.SoundType.Sab_Sticky);
         }
 
         if (sabotagedID != _spinnerID) cm.SpawnCallout(_spinnerID, "-" + eyeballCost + " eyes", CalloutManager.negative);

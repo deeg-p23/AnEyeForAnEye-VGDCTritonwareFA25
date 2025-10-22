@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using System.Threading.Tasks;
+using TMPro;
 using Unity.Cinemachine;
 using UnityEngine.SceneManagement;
 
@@ -19,6 +20,8 @@ public class SceneManager : MonoBehaviour
 
     // --- Pause Controls Modal ---
     [SerializeField] private GameObject PanelMenuImage;    // the main pause menu panel/image
+    [SerializeField] private TMP_Text countdownText;
+    [SerializeField] private Image pauseBackground;
     
     void Update()
     {
@@ -52,17 +55,79 @@ public class SceneManager : MonoBehaviour
     public void SetGamePaused(bool isPaused)
     {
         gameIsPaused = isPaused;
+        GameManager.Instance.gameIsRunning = !isPaused;
 
         if (gameIsPaused)
         {
             pauseScreen.SetActive(true);
             Time.timeScale = 0;
+            SoundManager.Instance.PauseMusic();
+            SoundManager.Instance.Play(SoundManager.SoundType.Pause);
         }
         else
         {
             pauseScreen.SetActive(false);
             Time.timeScale = 1;
+            SoundManager.Instance.ResumeMusic();
+            if (GameManager.Instance.gameRuntime > 0.5f) SoundManager.Instance.Play(SoundManager.SoundType.Unpause);
         }
+    }
+
+    public void ResumeGame()
+    {
+        StartCoroutine(ResumeCountdownCoroutine());
+    }
+
+    private IEnumerator ResumeCountdownCoroutine()
+    {
+        // Disable pausing during countdown
+        pauseScreenAccessable = false;
+
+        // Disable menu UI
+        PanelMenuImage.SetActive(false);
+
+        // Enable countdown UI
+        countdownText.gameObject.SetActive(true);
+
+        // Ensure game is still paused during countdown
+        gameIsPaused = true;
+        GameManager.Instance.gameIsRunning = false;
+
+        // Start BG fade
+        float elapsed = 0f;
+        Color bgColor = pauseBackground.color;
+        
+        // Count down 3..2..1
+        for (int i = 3; i > 0; i--)
+        {
+            countdownText.text = i.ToString();
+            SoundManager.Instance.Play(SoundManager.SoundType.Clock_Tick);
+
+            float segmentStart = elapsed;
+            float segmentEnd = segmentStart + 1f;
+
+            while (elapsed < segmentEnd)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / 3f);
+                bgColor.a = Mathf.Lerp(0.8f, 0f, t);
+                pauseBackground.color = bgColor;
+                yield return null;
+            }
+        }
+
+        // Countdown finished → resume game
+        countdownText.gameObject.SetActive(false);
+        SetGamePaused(false);
+        
+        // Re-enable menu UI
+        PanelMenuImage.SetActive(true);
+
+        bgColor.a = 0.8f;
+        pauseBackground.color = bgColor;
+        
+        // Re-enable pausing
+        pauseScreenAccessable = true;
     }
 
     void Start()
@@ -123,6 +188,7 @@ public class SceneManager : MonoBehaviour
 
         while (elapsed < duration)
         {
+            SoundManager.Instance.SetMusicVolume(1f - elapsed / duration);
             elapsed += Time.unscaledDeltaTime;
             float t = Mathf.Clamp01(elapsed / duration);
             float fadeValue = Mathf.Lerp(startFade, endFade, t);

@@ -5,7 +5,22 @@ public class SoundManager : MonoBehaviour
 {
     public enum SoundType
     {
-        BG_Music
+        BG_Music,
+        BG_Title,
+        Pause,
+        Unpause,
+        Clock_Tick,
+        Sab_Sticky,
+        Sab_Swap,
+        Sab_Ink,
+        Sab_Slow,
+        Frog,
+        Crow,
+        Spin,
+        Potion,
+        Pour,
+        Magic,
+        Stir
     }
  
     [System.Serializable]
@@ -70,6 +85,11 @@ public class SoundManager : MonoBehaviour
         {
             _bgMusicSource = audioSrc;
         }
+        else if (type == SoundType.BG_Title)
+        {
+            _bgMusicSource = audioSrc;
+            _bgMusicSource.loop = true;
+        }
         else
         {
             Destroy(soundObj, s.Clip.length);
@@ -96,6 +116,12 @@ public class SoundManager : MonoBehaviour
         _bgMusicSource.Play();
     }
     
+    public void PauseMusic() { _bgMusicSource.Pause(); }
+    public void ResumeMusic() { _bgMusicSource.Play(); }
+    
     public float GetMusicTime() { return _bgMusicSource.time; }
+    
+    public void SetMusicVolume(float volume) { _bgMusicSource.volume = volume; }
+
     public void SetMusicTime(float time) { _bgMusicSource.time = time; } // FOR DEBUGGING ONLY
 }

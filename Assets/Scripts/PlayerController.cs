@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
@@ -247,7 +248,11 @@ public class PlayerController : MonoBehaviour
                 
                 // stir frame register
                 float stirValue = 0f;
-                if (Input.GetKeyDown(Inputs["Mix"])) stirValue = GameManager.Instance.RegisterStirTick(_id);
+                if (Input.GetKeyDown(Inputs["Mix"]))
+                {
+                    stirValue = GameManager.Instance.RegisterStirTick(_id);
+                    SoundManager.Instance.Play(SoundManager.SoundType.Stir);
+                }
                 _stirProgress += stirValue;
                 
                 break;
@@ -258,6 +263,7 @@ public class PlayerController : MonoBehaviour
                     if (Input.GetKeyDown(Inputs["Harvest"]))
                     {
                         _harvestProgress += 0.1f;
+                        SoundManager.Instance.Play(SoundManager.SoundType.Magic);
                         GameManager.Instance.SetHarvestMeter(_id, _harvestProgress);
                     }
                 }
@@ -300,6 +306,7 @@ public class PlayerController : MonoBehaviour
     private void StartPourEvent()
     {
         _state = States.Pouring;
+        SoundManager.Instance.Play(SoundManager.SoundType.Pour);
         GameManager.Instance.ShowPourMeter(_id, _item.GetItemType());
     }
 
@@ -399,6 +406,19 @@ public class PlayerController : MonoBehaviour
     {
         _nextIngredient = ingredient;
         _grabTimer = _grabTimerMax;
+
+        switch (_nextIngredient.GetItemType())
+        {
+            case IngredientItem.ItemType.Frog:
+                SoundManager.Instance.Play(SoundManager.SoundType.Frog);
+                break;
+            case IngredientItem.ItemType.Heart:
+                SoundManager.Instance.Play(SoundManager.SoundType.Potion);
+                break;
+            case IngredientItem.ItemType.Raven:
+                SoundManager.Instance.Play(SoundManager.SoundType.Crow);
+                break;
+        }
         
         _state = States.Grabbing;
     }
