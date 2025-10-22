@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: LenoresElixir
   m_EditorClassIdentifier: 
   heartPortion: 1
-  ravenPortion: 1
-  frogPortion: 4
-  stirAmount: 60
+  ravenPortion: 4
+  frogPortion: 2
+  stirAmount: 70

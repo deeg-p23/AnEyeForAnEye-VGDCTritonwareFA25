@@ -23,9 +23,15 @@ public class PlayerController : MonoBehaviour
     private int _id; // dictates which player this controller is. 0: left, 1: right
     // note: very ungraceful way of referencing certain objects in GameManager ^^^
     private IngredientItem _nextIngredient;
+    
+    public CalloutManager cm;
+    
+    private bool _evilPunished = false;
+    private float _spinCooldown = 0f;
 
     // player state timers
     private float _grabTimer = 0f;
+    private float _grabTimerMax = 0.1f;
 
     private float _frogPortion = 0f;
     private float _ravenPortion = 0f;
@@ -278,16 +284,17 @@ public class PlayerController : MonoBehaviour
         // eyeplot updating
         if (_state != States.Harvesting)
         {
-            _eyeplotGrowth += Time.deltaTime;
-            _eyeplotGrowth = Mathf.Clamp(_eyeplotGrowth, 0f, 9f);
+            _eyeplotGrowth += Time.deltaTime / (_evilPunished ? 2f : 1f);
+            _eyeplotGrowth = Mathf.Clamp(_eyeplotGrowth, 0f, (_evilPunished ? 9f : 9f));
             GameManager.Instance.AnimateEyeplot(_id, _eyeplotGrowth);
         }
         
         // spin action
         if (Input.GetKeyDown(Inputs["Spin"]))
         {
-            GameManager.Instance.SpinWheel(_id);
+            GameManager.Instance.SpinWheel(_id, _spinCooldown);
         }
+        _spinCooldown = Mathf.Max(_spinCooldown - Time.deltaTime, 0f);
     }
 
     private void StartPourEvent()
@@ -296,7 +303,8 @@ public class PlayerController : MonoBehaviour
         GameManager.Instance.ShowPourMeter(_id, _item.GetItemType());
     }
 
-    private void EndPourEvent()
+    // protection: public to be forcibly called by game manager's swap ingredient sabotage
+    public void EndPourEvent()
     {
         // do not set state to idle, EndPourEvent() always called after state -> idle due to active action
         GameManager.Instance.HidePourMeter(_id);
@@ -326,12 +334,14 @@ public class PlayerController : MonoBehaviour
         float sB = CompareIngredientPortions(_recipe.heartPortion, _heartPortion, alpha, gamma);
         float sC = CompareIngredientPortions(_recipe.ravenPortion, _ravenPortion, alpha, gamma);
         float raw = (sA + sB + sC) / 3f * 100f;
-        
-        _totalScore += (int)Mathf.CeilToInt(raw);
+
+        int score = (int)Mathf.CeilToInt(raw);
+        cm.SpawnCallout(_id, "Potion complete!\n+" + score + " score", CalloutManager.recipe);
+        _totalScore += score;
         GameManager.Instance.SetScoreCounter(_id, _totalScore);
         
         // reset player states/values
-        // _state = States.Idle;
+        _state = States.Idle;
         _stirProgress = 0f;
         _frogPortion = 0f;
         _ravenPortion = 0f;
@@ -356,7 +366,7 @@ public class PlayerController : MonoBehaviour
 
     private void StartHarvestEvent()
     {
-        if (_eyeplotGrowth < 3f) return; // not enough growth to harvest
+        if (_eyeplotGrowth < (_evilPunished ? 3f : 3f)) return; // not enough growth to harvest
             
         _state = States.Harvesting;
         _harvestProgress = 0f;
@@ -373,9 +383,14 @@ public class PlayerController : MonoBehaviour
         _harvestProgress = 0f;
         GameManager.Instance.HideHarvestMeter(_id);
 
-        int plotRemainder = Mathf.FloorToInt(_eyeplotGrowth / 3);
+        if (!completed) return;
+
+        int plotRemainder = Mathf.FloorToInt(_eyeplotGrowth / (_evilPunished ? 3f : 3f));
+        
+        cm.SpawnCallout(_id, "+" + plotRemainder + " eyes", CalloutManager.eyeball);
+        
         _totalEyes += plotRemainder;
-        _eyeplotGrowth = Mathf.Clamp(_eyeplotGrowth - plotRemainder, 0f, 1f);
+        _eyeplotGrowth = Mathf.Clamp(_eyeplotGrowth - plotRemainder, 0f, (_evilPunished ? 1f : 1f));
         
         GameManager.Instance.SetEyeCounter(_id, _totalEyes);
     }
@@ -383,7 +398,7 @@ public class PlayerController : MonoBehaviour
     private void StartIngredientGrab(IngredientItem ingredient)
     {
         _nextIngredient = ingredient;
-        _grabTimer = GameManager.GrabTimerMax;
+        _grabTimer = _grabTimerMax;
         
         _state = States.Grabbing;
     }
@@ -424,8 +439,11 @@ public class PlayerController : MonoBehaviour
     
     void Update()
     {
-        StateUpdate();
-        StateTransition();
+        if (GameManager.Instance.gameIsRunning)
+        {
+            StateUpdate();
+            StateTransition();   
+        }
     }
     
     public void SetID(int id) { _id = id; }
@@ -443,9 +461,29 @@ public class PlayerController : MonoBehaviour
 
     public void SetRecipe(Recipe recipe)
     {
+        Debug.Log("WTF");
         _recipe = recipe;
+        Debug.Log(_recipe);
         frogRecipeFill.value = recipe.frogPortion;
         heartRecipeFill.value = recipe.heartPortion;
         ravenRecipeFill.value = recipe.ravenPortion;
     }
+
+    public void ForceIdleState()
+    {
+        _state = States.Idle;
+    }
+
+    public void SetItem(IngredientItem ingredientItem)
+    {
+        _item = ingredientItem;
+    }
+    
+    public IngredientItem GetItem() { return _item; }
+    
+    public void SetGrabTimerMax(float value) { _grabTimerMax = value; }
+    
+    public void SetEvilPunished(bool value) { _evilPunished = value; }
+    
+    public void setSpinCooldown(float value) { _spinCooldown = value; }
 } 

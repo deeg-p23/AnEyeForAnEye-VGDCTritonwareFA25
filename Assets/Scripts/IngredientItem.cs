@@ -37,6 +37,11 @@ public class IngredientItem : MonoBehaviour
         }
     }
 
+    public void SetItemType(ItemType itemType)
+    {
+        _itemType = itemType;
+    }
+
     public void SetSprite(Sprite sprite) { _image.sprite = sprite; }
     
     public bool GetSprite() { return _image.sprite; }

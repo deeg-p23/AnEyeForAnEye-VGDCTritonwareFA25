@@ -97,4 +97,5 @@ public class SoundManager : MonoBehaviour
     }
     
     public float GetMusicTime() { return _bgMusicSource.time; }
+    public void SetMusicTime(float time) { _bgMusicSource.time = time; } // FOR DEBUGGING ONLY
 }

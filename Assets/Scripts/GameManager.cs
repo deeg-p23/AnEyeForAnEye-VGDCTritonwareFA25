@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 using Random = Unity.Mathematics.Random;
@@ -9,8 +10,22 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
 
-    public UnityEngine.UI.Image inkSabotage; //check this
+    public CalloutManager cm;
+    
+    // VITAL GAME-TIME STATES
+    public bool gameIsRunning = false;
+    public float gameRuntime = 0f;
+    private const float evilHourKickoff = 135f; // EVIL HOUR has begun! SABOTAGE your opponent! [Or face the consequences...]
+    private const float evilHourCloseoff = 165f; // EVIL HOUR has ended!
+    private const float rushHourKickoff = 240f; // ONE MINUTE left! [Pick up the pace!]
+    private const float rushHourCloseoff = 290f; // TEN SECONDS left! [Finish that potion!]
+    private const float gameEndtime = 300f;
 
+    private bool ReachedEvilHourKickoff = false;
+    private bool ReachedEvilHourCloseoff = false;
+    private bool ReachedRushHourKickoff = false;
+    private bool ReachedRushHourCloseoff = false;
+    
     public static float GrabTimerMax = 0.15f;
     public static float MixFrameMax = 0.1f;
 
@@ -63,8 +78,19 @@ public class GameManager : MonoBehaviour
     public TMP_Text scoreCounterA;
     public TMP_Text scoreCounterB;
     
+    // SABOTAGE references
+    public GameObject inkSabotageA;
+    public GameObject inkSabotageB;
+    public Material ingredientMaterialA;
+    public Material ingredientMaterialB;
+
+    private float _tempoModifierA = 1f;
+    private float _tempoModifierB = 1f;
+    private float _bgmCrotchetA;
+    private float _bgmCrotchetB;
+    
     // RECIPE OBJECTS
-    public Recipe tellTaleTonic;
+    public Recipe[] recipes;
     
     int[][] _eyePlotSpriteIndices = new int[][]
     {
@@ -82,13 +108,33 @@ public class GameManager : MonoBehaviour
 
     public RectTransform clockPivot;
     
-    // SABOTAGE SPINNING VARS
+    // SABOTAGE SPINNING / ROUTINE REFERENCE VARS
     private float _spinTime; // spinning lasts 4 seconds
     private int _spinnerID; // 0 if player A spun, 1 if player B spun
     private bool _spinning; // if true, wheels cannot be re-spun
+    private float _spinVelConstant;
+    private float _spinExpConstant;
+
+    private bool _playerAIsEvil;
+    private bool _playerBIsEvil;
 
     public RectTransform sabotageWheel;
     public RectTransform paymentWheel;
+
+    private Coroutine slowStirRoutineA;
+    private Coroutine slowStirRoutineB;
+    private Coroutine inkRoutineA;
+    private Coroutine inkRoutineB;
+    private Coroutine randomSwapRoutineA;
+    private Coroutine randomSwapRoutineB;
+    private Coroutine stickyRoutineA;
+    private Coroutine stickyRoutineB;
+
+    private System.Random rng;
+    
+    // debuggers
+
+    public Slider debugCrotchet;
     
     void Start()
     {
@@ -96,8 +142,6 @@ public class GameManager : MonoBehaviour
         Instance = this;
         playerA.SetID(0);
         playerB.SetID(1);
-        
-        SoundManager.Instance.Play(SoundManager.SoundType.BG_Music);
         
         metronomeA.SetActive(false);
         metronomeB.SetActive(false);
@@ -131,9 +175,11 @@ public class GameManager : MonoBehaviour
         
         playerA.SetRecipe(GenerateRecipe());
         playerB.SetRecipe(GenerateRecipe());
+
+        // SoundManager.Instance.SetMusicTime(240f);
         
         // poorly randomizing item placements but wtv right
-        System.Random rng = new System.Random();
+        rng = new System.Random();
         
         IngredientItem.ItemType[] itemsToStore = new IngredientItem.ItemType[] 
             { IngredientItem.ItemType.Heart, IngredientItem.ItemType.Frog, IngredientItem.ItemType.Raven };
@@ -146,26 +192,108 @@ public class GameManager : MonoBehaviour
 
         RandomizeIngredients(upItemA, rightItemA, leftItemA, itemsToStore, rng);
         RandomizeIngredients(upItemB, rightItemB, leftItemB, itemsToStore, rng);
+
+        BeginGame();
     }
 
+    void setMetronome(int id, float tempo)
+    {
+        float refCrotchet = 60f / tempo;
+        if (id == 0) _bgmCrotchetA = 60f / tempo;
+        else if (id == 1) _bgmCrotchetB = 60f / tempo;
+        
+        float bgm_t = SoundManager.Instance.GetMusicTime();
+        bgm_t += (bgm_t < 240) ? 0.33f : 0.6f;
+        
+        float n = Mathf.Floor(bgm_t / refCrotchet);
+        float f = (bgm_t - n * refCrotchet) / refCrotchet;
+        float offset = 100f * (1f - Mathf.Pow(-1f, n)) / 2f;
+        float angle = Mathf.Pow(-1f, n) * 100f * f + offset - 50f;
+        if (id == 0) metronomePivotA.rotation = Quaternion.Euler(0f, 0f,angle);
+        else if (id == 1) metronomePivotB.rotation = Quaternion.Euler(0f, 0f,angle);
+    }
+
+    void BeginGame()
+    {
+        gameIsRunning = true;
+        SoundManager.Instance.Play(SoundManager.SoundType.BG_Music);
+    }
+
+    void StartEvilHour()
+    {
+        cm.SpawnCallout(3, "EVIL HOUR has begun!\n<size=64>Sabotage your enemy...\nor be punished!", CalloutManager.evilHour);
+        ReachedEvilHourKickoff = true;
+        return;
+    }
+    
+    void EndEvilHour()
+    {
+        if (!_playerAIsEvil)
+        {
+            cm.SpawnCallout(0, "-" + (playerA.GetTotalEyes() / 2) + " eyes", CalloutManager.negative);
+            playerA.SetTotalEyes(playerA.GetTotalEyes() / 2);
+            playerA.SetEvilPunished(true);
+        }
+
+        if (!_playerBIsEvil)
+        {
+            cm.SpawnCallout(1, "-" + (playerB.GetTotalEyes() / 2) + " eyes", CalloutManager.negative);
+            playerB.SetTotalEyes(playerB.GetTotalEyes() / 2);
+            playerB.SetEvilPunished(true);
+            // append player B to evil hour announcement
+        }
+
+        string result = "";
+        if (_playerAIsEvil && _playerBIsEvil) result = "No one was punished";
+        if (!_playerAIsEvil && _playerBIsEvil) result = "Player 1 has been punished";
+        if (_playerAIsEvil && !_playerBIsEvil) result = "Player 2 has been punished";
+        if (!_playerAIsEvil && !_playerBIsEvil) result = "Both players have been punished";
+        
+        cm.SpawnCallout(3, "EVIL HOUR has ended!\n<size=64>"+result, CalloutManager.evilHour);
+        
+        ReachedEvilHourCloseoff = true;
+    }
+
+    void StartRushHour()
+    {
+        cm.SpawnCallout(3, "ONE MINUTE remains...\n<size=64>Pick up the pace!", CalloutManager.rushHour);
+        ReachedRushHourKickoff = true;
+    }
+
+    void EndRushHour()
+    {
+        cm.SpawnCallout(3, "TEN SECONDS LEFT!", CalloutManager.rushHour);
+        ReachedRushHourCloseoff = true;
+    }
+
+    void EndGame()
+    {
+        cm.SpawnCallout(3, "TIME'S UP!", Color.white);
+        gameIsRunning = false;
+    }
+    
     void Update()
     {
+        if (!gameIsRunning) return;
+
+        if (gameRuntime < gameEndtime) gameRuntime += Time.deltaTime;
+        else EndGame();
+
+        if (gameRuntime >= evilHourKickoff && !ReachedEvilHourKickoff) StartEvilHour();
+        if (gameRuntime >= evilHourCloseoff && !ReachedEvilHourCloseoff) EndEvilHour();
+        if (gameRuntime >= rushHourKickoff && !ReachedRushHourKickoff) StartRushHour();
+        if (gameRuntime >= rushHourCloseoff && !ReachedRushHourCloseoff) EndRushHour();
+        
         // 4:00.50 , tempo 117 -> 181
         float period = 60f;
         float bgm_t = SoundManager.Instance.GetMusicTime();
-        float tempo = (bgm_t < 240.5) ? 117f : 181f;
-        _bgmCrotchet = period / tempo;
-        bgm_t += _bgmCrotchet / 2f;
+        float tempo = (bgm_t < 240) ? 117f : 181f;
         
-        float n = Mathf.Floor(bgm_t / _bgmCrotchet);
-        float f = (bgm_t - n * _bgmCrotchet) / _bgmCrotchet;
-        float offset = 100f * (1f - Mathf.Pow(-1f, n)) / 2f;
-        float angle = Mathf.Pow(-1f, n) * 100f * f + offset - 50f;
-        metronomePivotA.rotation = Quaternion.Euler(0f, 0f,angle);
-        metronomePivotB.rotation = Quaternion.Euler(0f, 0f,angle);
+        setMetronome(0, tempo * _tempoModifierA);
+        setMetronome(1, tempo * _tempoModifierB);
         
         // clock
-        float clockAngle = (Time.time / 300f) * -360f;
+        float clockAngle = (gameRuntime / 300f) * -360f;
         clockPivot.rotation = Quaternion.Euler(0f, 0f, clockAngle);
         
         // wheels
@@ -174,8 +302,7 @@ public class GameManager : MonoBehaviour
             if (_spinTime < 5)
             {
                 _spinTime += Time.deltaTime;
-                float k = 0.25f;
-                float spinSpeed = 2000 * (1 - Mathf.Exp(-k * Mathf.Pow(5-_spinTime, 2)));
+                float spinSpeed = _spinVelConstant * (1 - Mathf.Exp(-_spinExpConstant * Mathf.Pow(5-_spinTime, 2)));
                 sabotageWheel.rotation = Quaternion.Euler(0f, 0f, sabotageWheel.eulerAngles.z + spinSpeed * Time.deltaTime);
                 paymentWheel.rotation = Quaternion.Euler(0f, 0f, paymentWheel.eulerAngles.z - spinSpeed * Time.deltaTime);
             }
@@ -189,8 +316,13 @@ public class GameManager : MonoBehaviour
     public float RegisterStirTick(int id)
     {
         float bgm_t = SoundManager.Instance.GetMusicTime();
-        bgm_t += _bgmCrotchet / 2f;
-        float f = (bgm_t % _bgmCrotchet) / _bgmCrotchet; // rounding % of how close stir tick was to being on tempo
+        
+        float refCrotchet = 0f;
+        if (id == 0) refCrotchet = _bgmCrotchetA;
+        else if (id == 1) refCrotchet = _bgmCrotchetB;
+        
+        bgm_t += (bgm_t < 240) ? 0.33f : 0.6f;
+        float f = (bgm_t % refCrotchet) / refCrotchet; // rounding % of how close stir tick was to being on tempo
         // [0, 5) or (95, 100]: great +9 [10% space]
         // [5, 15) or (85, 95]: good +4.5 [20% space]
         // [15, 25) or (75, 85]: ok +1.5 [20% space]
@@ -217,35 +349,278 @@ public class GameManager : MonoBehaviour
         left.SetItem(items[2]);
     }
 
-    public void InkBlockScreen(float duration = 10f) 
-    { 
-        StartCoroutine(InkBlockCoroutine(duration)); 
-    } 
-    
-    private IEnumerator InkBlockCoroutine(float duration) 
-    { 
-        if(inkSabotage == null) 
-        {
-            Debug.LogWarning("InkSabotage isn't assigned in GameManager");
-            yield break;
-        } 
+    public void StickySabotage(int id, float stickyGrabTime = 0.75f, float duration = 20f)
+    {
+        // cancel if sabotage is already active for this player
+        if (id == 0 && stickyRoutineA != null)
+            StopCoroutine(stickyRoutineA);
+        else if (id == 1 && stickyRoutineB != null)
+            StopCoroutine(stickyRoutineB);
 
-        //ink screen
-        inkSabotage.enabled = true;
+        Coroutine newRoutine = StartCoroutine(StickySabotageCoroutine(id, stickyGrabTime, duration));
+
+        if (id == 0) stickyRoutineA = newRoutine;
+        else stickyRoutineB = newRoutine;
+    }
+
+    private IEnumerator StickySabotageCoroutine(int id, float stickyGrabTime, float duration)
+    {
+        // Get correct items
+        IngredientItem up = (id == 0) ? upItemA : upItemB;
+        IngredientItem right = (id == 0) ? rightItemA : rightItemB;
+        IngredientItem left = (id == 0) ? leftItemA : leftItemB;
+
+        // Activate first child (sticky image) on each ingredient
+        up.transform.GetChild(0).gameObject.SetActive(true);
+        right.transform.GetChild(0).gameObject.SetActive(true);
+        left.transform.GetChild(0).gameObject.SetActive(true);
+
+        // Set player grab timer
+        PlayerController player = GetPlayerById(id);
+        if (player != null)
+            player.SetGrabTimerMax(stickyGrabTime);
+
+        // Wait sabotage duration
         yield return new WaitForSeconds(duration);
 
-        //hide ink
-        inkSabotage.enabled = false;
+        // Disable sticky images
+        up.transform.GetChild(0).gameObject.SetActive(false);
+        right.transform.GetChild(0).gameObject.SetActive(false);
+        left.transform.GetChild(0).gameObject.SetActive(false);
+
+        // Reset grab timer
+        if (player != null)
+            player.SetGrabTimerMax(0.1f);
+
+        // clear reference
+        if (id == 0) stickyRoutineA = null;
+        else stickyRoutineB = null;
+    }
+    
+    // Public caller
+    public void RandomizeIngredientSabotage(int id)
+    {
+        // Prevent stacking sabotage
+        if (id == 0 && randomSwapRoutineA != null)
+            StopCoroutine(randomSwapRoutineA);
+        else if (id == 1 && randomSwapRoutineB != null)
+            StopCoroutine(randomSwapRoutineB);
+
+        Coroutine newRoutine = StartCoroutine(RandomizeIngredientSabotageCoroutine(id));
+
+        if (id == 0) randomSwapRoutineA = newRoutine;
+        else randomSwapRoutineB = newRoutine;
+    }
+    
+    private PlayerController GetPlayerById(int id)
+    {
+        return (id == 0) ? playerA : playerB;
+    }
+    
+    // Coroutine logic
+    private IEnumerator RandomizeIngredientSabotageCoroutine(int id)
+    {
+        IngredientItem up = (id == 0) ? upItemA : upItemB;
+        IngredientItem right = (id == 0) ? rightItemA : rightItemB;
+        IngredientItem left = (id == 0) ? leftItemA : leftItemB;
+
+        // If player currently has an item, clear it
+        PlayerController player = GetPlayerById(id);
+        if (player != null && player.GetItem() != null)
+        {
+            player.ForceIdleState();
+            player.EndPourEvent();
+            player.SetItem(null);
+        }
+
+        // Rotate ingredient types (up → right → left → up)
+        IngredientItem.ItemType upType = up.GetItemType();
+        IngredientItem.ItemType rightType = right.GetItemType();
+        IngredientItem.ItemType leftType = left.GetItemType();
+
+        // Rotate the types
+        right.SetItemType(upType);
+        left.SetItemType(rightType);
+        up.SetItemType(leftType);
+        
+        right.EnableImage();
+        left.EnableImage();
+        up.EnableImage();
+        
+        Material material = (id == 0) ? ingredientMaterialA : ingredientMaterialB;
+        
+        // Fade Out (0 → 1)
+        float fadeDuration = 1f;
+        yield return StartCoroutine(FadeMaterial(material, 0f, 1f, fadeDuration));
+
+        // Update sprites after fade hides them
+        up.SetItem(up.GetItemType());
+        right.SetItem(right.GetItemType());
+        left.SetItem(left.GetItemType());
+
+        // Fade In (1 → 0)
+        yield return StartCoroutine(FadeMaterial(material, 1f, 0f, fadeDuration));
+
+        if (id == 0) randomSwapRoutineA = null;
+        else randomSwapRoutineB = null;
+    }
+
+    // Fade utility for item swap sabotage
+    private IEnumerator FadeMaterial(Material material, float from, float to, float duration)
+    {
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            float value = Mathf.Lerp(from, to, t);
+            material.SetFloat("_Fade", value);
+            yield return null;
+        }
+        material.SetFloat("_Fade", to);
+    }
+    
+    public void SlowStirTempo(int id, float slowValue = 0.5f, float duration = 20f)
+    {
+        if (id == 0 && slowStirRoutineA != null)
+            StopCoroutine(slowStirRoutineA);
+        else if (id == 1 && slowStirRoutineB != null)
+            StopCoroutine(slowStirRoutineB);
+
+        Coroutine newRoutine = StartCoroutine(SlowStirTempoCoroutine(id, slowValue, duration));
+        if (id == 0) slowStirRoutineA = newRoutine;
+        else slowStirRoutineB = newRoutine;
+    }
+
+    private IEnumerator SlowStirTempoCoroutine(int id, float slowValue, float duration)
+    {
+        // Save original value (in case it's not always 1)
+        float original = (id == 0) ? _tempoModifierA : _tempoModifierB;
+
+        // Set to slow value
+        if (id == 0) _tempoModifierA = slowValue;
+        else _tempoModifierB = slowValue;
+
+        // Wait for duration
+        yield return new WaitForSeconds(duration);
+
+        // Restore original
+        if (id == 0)
+        {
+            _tempoModifierA = original;
+            slowStirRoutineA = null;
+        }
+        else
+        {
+            _tempoModifierB = original;
+            slowStirRoutineB = null;
+        }
+    }
+    
+    public void InkBlockScreen(int id, float duration = 15f) 
+    { 
+        // If already running, stop it first
+        if (id == 0 && inkRoutineA != null)
+            StopCoroutine(inkRoutineA);
+        else if (id == 1 && inkRoutineB != null)
+            StopCoroutine(inkRoutineB);
+
+        Coroutine newRoutine = StartCoroutine(InkBlockCoroutine(id, duration));
+        if (id == 0) inkRoutineA = newRoutine;
+        else inkRoutineB = newRoutine;
+    } 
+    
+    private IEnumerator InkBlockCoroutine(int id, float duration)
+    {
+        GameObject inkObj = (id == 0) ? inkSabotageA : inkSabotageB;
+        Image img = inkObj.GetComponent<Image>();
+
+        // make sure starting alpha is 0
+        Color startColor = img.color;
+        startColor.a = 0f;
+        img.color = startColor;
+
+        inkObj.SetActive(true);
+
+        float fadeInTime = 1f;
+        float fadeOutTime = 5f;
+
+        // Fade In (0 → 1 alpha)
+        float t = 0f;
+        while (t < fadeInTime)
+        {
+            t += Time.deltaTime;
+            float alpha = Mathf.Lerp(0f, 1f, t / fadeInTime);
+            SetImageAlpha(img, alpha);
+            yield return null;
+        }
+        SetImageAlpha(img, 1f);
+
+        // Hold
+        float holdTime = duration - fadeInTime - fadeOutTime;
+        if (holdTime > 0f)
+            yield return new WaitForSeconds(holdTime);
+
+        // Fade Out (1 → 0 alpha)
+        t = 0f;
+        while (t < fadeOutTime)
+        {
+            t += Time.deltaTime;
+            float alpha = Mathf.Lerp(1f, 0f, t / fadeOutTime);
+            SetImageAlpha(img, alpha);
+            yield return null;
+        }
+        SetImageAlpha(img, 0f);
+
+        inkObj.SetActive(false);
+        
+        // clear reference after finish
+        if (id == 0) inkRoutineA = null;
+        else inkRoutineB = null;
+    }
+
+    private void SetImageAlpha(Image img, float alpha)
+    {
+        Color c = img.color;
+        c.a = alpha;
+        img.color = c;
     }
     
 
-    public void SpinWheel(int id)
+    public void SpinWheel(int id, float spinCooldown)
     {
-        if (_spinning) return;
+        if (_spinning)
+        {
+            cm.SpawnCallout(id, "Spin in use", CalloutManager.inactive);
+            return;
+        }
+
+        if (spinCooldown > 0f)
+        {
+            cm.SpawnCallout(id, "Spin cooldown: " + Mathf.CeilToInt(spinCooldown) + "s", CalloutManager.inactive);
+            return;
+        }
         
         _spinnerID = id;
+        
+        if (_spinnerID == 0) cm.SpawnCallout(0, "Spinning . . .", CalloutManager.recipe);
+        else if (_spinnerID == 1) cm.SpawnCallout(1, "Spinning . . .", CalloutManager.recipe);
+        
+        // player has successfully attempted sabotage during evil hour, safe from punishment
+        if (ReachedEvilHourKickoff && !ReachedEvilHourCloseoff)
+        {
+            if (id == 0) _playerAIsEvil = true;
+            else if (id == 1) _playerBIsEvil = true;
+        }
+        
         _spinning = true;
         _spinTime = 0f;
+
+        _spinExpConstant = UnityEngine.Random.Range(0.15f, 0.3f);
+        _spinVelConstant = UnityEngine.Random.Range(1750f, 2250f);
+
+        if (id == 0) playerA.setSpinCooldown(playerA.GetTotalEyes());
+        else if (id == 1) playerB.setSpinCooldown(playerB.GetTotalEyes());
     }
 
     public void EndSpinEvent()
@@ -259,16 +634,6 @@ public class GameManager : MonoBehaviour
         paymentAngle = (paymentAngle % 360f + 360f) % 360f;
         paymentAngle = Mathf.Clamp(paymentAngle, 0f, 360f);
         
-        // sabotage range
-        if ((sabotageAngle >= 0 && sabotageAngle < 45) || (sabotageAngle >= 180 && sabotageAngle < 225))
-            Debug.Log("time sabotage");
-        else if ((sabotageAngle >= 45 && sabotageAngle < 90) || (sabotageAngle >= 225 && sabotageAngle < 270))
-            Debug.Log("swap sabotage");
-        else if ((sabotageAngle >= 90 && sabotageAngle < 135) || (sabotageAngle >= 270 && sabotageAngle < 315))
-            Debug.Log("ink sabotage");
-        else if ((sabotageAngle >= 135 && sabotageAngle <= 180) || (sabotageAngle >= 315 && sabotageAngle <= 360))
-            Debug.Log("mash sabotage");
-
         // payment range
         int eyeballCost = 30;
         if (paymentAngle >= 0 && paymentAngle < 45)
@@ -302,7 +667,31 @@ public class GameManager : MonoBehaviour
         }
 
         Debug.Log($"Player Sabotaged: {sabotagedID}");
+        
+        // sabotage range
+        if ((sabotageAngle >= 0 && sabotageAngle < 45) || (sabotageAngle >= 180 && sabotageAngle < 225))
+        {
+            SlowStirTempo(sabotagedID);
+            cm.SpawnCallout(sabotagedID, "Tempo slowed", CalloutManager.negative);
+        }
+        else if ((sabotageAngle >= 45 && sabotageAngle < 90) || (sabotageAngle >= 225 && sabotageAngle < 270))
+        {
+            RandomizeIngredientSabotage(sabotagedID);    
+            cm.SpawnCallout(sabotagedID, "Ingredients swapped", CalloutManager.negative);
+        }
+        else if ((sabotageAngle >= 90 && sabotageAngle < 135) || (sabotageAngle >= 270 && sabotageAngle < 315))
+        {
+            InkBlockScreen(sabotagedID);
+            cm.SpawnCallout(sabotagedID, "Blinded by ink", CalloutManager.negative);
+        }
+        else if ((sabotageAngle >= 135 && sabotageAngle <= 180) || (sabotageAngle >= 315 && sabotageAngle <= 360))
+        {
+            StickySabotage(sabotagedID);
+            cm.SpawnCallout(sabotagedID, "Ingredients stickied", CalloutManager.negative);
+        }
 
+        if (sabotagedID != _spinnerID) cm.SpawnCallout(_spinnerID, "-" + eyeballCost + " eyes", CalloutManager.negative);
+        
         // call sabotage on the sabotagedID
     }
 
@@ -328,7 +717,8 @@ public class GameManager : MonoBehaviour
 
     public Recipe GenerateRecipe()
     {
-        return tellTaleTonic;
+        int index = UnityEngine.Random.Range(0, recipes.Length);
+        return recipes[index];
     }
 
     public void HideMetronome(int id)
