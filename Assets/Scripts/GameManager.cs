@@ -217,6 +217,8 @@ public class GameManager : MonoBehaviour
     {
         gameIsRunning = true;
         SoundManager.Instance.Play(SoundManager.SoundType.BG_Music);
+
+        gameRuntime = 290f;
     }
 
     void StartEvilHour()
@@ -270,8 +272,15 @@ public class GameManager : MonoBehaviour
     {
         cm.SpawnCallout(3, "TIME'S UP!", Color.white);
         gameIsRunning = false;
+        SceneManager.Instance.pauseScreenAccessable = false;
+        StartResultsSequence();
     }
     
+    public void StartResultsSequence()
+    {
+        StartCoroutine(SceneManager.Instance.ResultsCoroutine());
+    }
+
     void Update()
     {
         if (!gameIsRunning) return;

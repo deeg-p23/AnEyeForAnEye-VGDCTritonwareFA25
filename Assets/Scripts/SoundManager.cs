@@ -7,6 +7,7 @@ public class SoundManager : MonoBehaviour
     {
         BG_Music,
         BG_Title,
+        BG_Fanfare,
         Pause,
         Unpause,
         Clock_Tick,

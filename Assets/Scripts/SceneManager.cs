@@ -12,6 +12,7 @@ public class SceneManager : MonoBehaviour
     [SerializeField] private GameObject loadingScreen;
     [SerializeField] private GameObject pauseScreen;
     [SerializeField] private GameObject loadingMask;
+    [SerializeField] private GameObject resultsScreen;
 
     public bool pauseScreenAccessable = false;
     public bool gameIsPaused = false;
@@ -245,6 +246,8 @@ public class SceneManager : MonoBehaviour
         loadingScreen.SetActive(true);
 
         await CloseSceneToLoad();
+        
+        resultsScreen.SetActive(false);
 
         do
         {
@@ -266,9 +269,254 @@ public class SceneManager : MonoBehaviour
         loadingScreen.SetActive(false);
     }
     
-    public async void CloseSceneLoad()
+    [Header("UI References")]
+    [SerializeField] private RectTransform resultsPanel;
+    [SerializeField] private RectTransform iconsPanel;
+    [SerializeField] private RectTransform crown;
+    [SerializeField] private TMP_Text playerTotalA;
+    [SerializeField] private TMP_Text playerTotalB;
+    [SerializeField] private TMP_Text playerATitle;
+    [SerializeField] private TMP_Text playerBTitle;
+    [SerializeField] private RectTransform buttonsPanel;
+
+    [Header("Config")]
+    [SerializeField] private float introDuration = 1f;
+    [SerializeField] private float oscillationDuration = 5f;
+    [SerializeField] private float crownOscillationAmplitude = 350f;
+    [SerializeField] private float crownOscillationSpeed = 2f;
+    [SerializeField] private float titlePopScaleVictor = 1.3f;
+    [SerializeField] private float titlePopScaleLoser = 1.0f;
+    [SerializeField] private float buttonExpandMaxY = 0.75f;
+
+    private Coroutine oscillationCoroutineA;
+    private Coroutine oscillationCoroutineB;
+
+    private Color victorColor = new Color32(0xF5, 0xBA, 0x3F, 0xFF);
+    private Color loserColor  = new Color32(0xBD, 0x27, 0x65, 0xFF);
+    private Color tiedColor   = new Color32(0xAF, 0xAF, 0xAF, 0xFF);
+
+    [SerializeField] private Image resultBG;
+    [SerializeField] private Image resultVig;
+    [SerializeField] private float bgTargetAlpha = 0.8f;
+    [SerializeField] private float vigTargetAlpha = 1.0f;
+    
+    public IEnumerator ResultsCoroutine()
     {
+        // compute end game scores
+        int playerAScore = GameManager.Instance.playerA.GetTotalEyes() * 15 + GameManager.Instance.playerA.GetTotalEyes();
+        int playerBScore = GameManager.Instance.playerB.GetTotalEyes() * 15 + GameManager.Instance.playerB.GetTotalEyes();
+
+        resultsScreen.SetActive(true);
         
+        yield return new WaitForSecondsRealtime(1f);
+        
+        StartCoroutine(FadeInBackgrounds(1f));
+        
+        // 1. Animate Results Panel bottom -> 0
+        Vector2 startResultsPos = resultsPanel.anchoredPosition;
+        startResultsPos.y = 500;
+        resultsPanel.anchoredPosition = startResultsPos;
+        yield return StartCoroutine(ExponentialMoveY(resultsPanel, 0, introDuration));
+
+        // 2. Animate Icons Panel scale 0 -> 1
+        iconsPanel.localScale = Vector3.zero;
+        yield return StartCoroutine(ExponentialScale(iconsPanel, Vector3.one, introDuration));
+
+        // 2.5 Play fanfare sound
+        SoundManager.Instance.Play(SoundManager.SoundType.BG_Fanfare);
+
+        // 3. Oscillate crown + count player scores for 5s
+        float timer = 0f;
+        while (timer < oscillationDuration)
+        {
+            // oscillate crown left-right
+            float oscillation = Mathf.Sin(timer * crownOscillationSpeed) * crownOscillationAmplitude;
+            Vector2 crownPos = crown.anchoredPosition;
+            crownPos.x = oscillation;
+            crown.anchoredPosition = crownPos;
+
+            // count totals
+            float lerpT = timer / oscillationDuration;
+            playerTotalA.text = Mathf.FloorToInt(lerpT * playerAScore).ToString();
+            playerTotalB.text = Mathf.FloorToInt(lerpT * playerBScore).ToString();
+
+            timer += Time.unscaledDeltaTime;
+            yield return null;
+        }
+        playerTotalA.text = playerAScore.ToString();
+        playerTotalB.text = playerBScore.ToString();
+
+        // 4. Determine winner
+        if (playerAScore > playerBScore)
+        {
+            yield return StartCoroutine(InterpolateCrownAndTitles(-crownOscillationAmplitude, 
+                "VICTOR!", "LOSER...", victorColor, loserColor, titlePopScaleVictor, titlePopScaleLoser));
+        }
+        else if (playerAScore > playerBScore)
+        {
+            yield return StartCoroutine(InterpolateCrownAndTitles(crownOscillationAmplitude, 
+                "LOSER...", "VICTOR!", loserColor, victorColor, titlePopScaleLoser, titlePopScaleVictor));
+        }
+        else
+        {
+            yield return StartCoroutine(InterpolateCrownAndTitles(0, 
+                "TIED", "TIED", tiedColor, tiedColor, 1f, 1f));
+        }
+
+        // 5. Post-animation idle oscillations
+        oscillationCoroutineA = StartCoroutine(IdleScaleOscillation(playerATitle.rectTransform, titlePopScaleVictor, 1.6f, 1f));
+        oscillationCoroutineB = StartCoroutine(IdleRotationOscillation(playerBTitle.rectTransform, -6f, 6f, 1.5f));
+
+        // 6. Expand buttons panel max.y = 0 -> 0.75 exponential decay in 1s
+        Vector2 btnSize = buttonsPanel.anchorMax;
+        btnSize.y = 0f;
+        buttonsPanel.anchorMax = btnSize;
+        yield return StartCoroutine(ExponentialAnchorMaxY(buttonsPanel, buttonExpandMaxY, introDuration));
+    }
+
+    // ------------------------- HELPERS -------------------------
+    private IEnumerator FadeInBackgrounds(float duration = 1f)
+    {
+        Color bgStart = resultBG.color;
+        Color vigStart = resultVig.color;
+        float elapsed = 0f;
+
+        // make sure initial alpha is 0
+        bgStart.a = 0f;
+        vigStart.a = 0f;
+        resultBG.color = bgStart;
+        resultVig.color = vigStart;
+
+        Color bgEnd = bgStart;
+        Color vigEnd = vigStart;
+        bgEnd.a = bgTargetAlpha;
+        vigEnd.a = vigTargetAlpha;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = 1f - Mathf.Exp(-5f * (elapsed / duration)); // exponential ease
+            resultBG.color = Color.Lerp(bgStart, bgEnd, t);
+            resultVig.color = Color.Lerp(vigStart, vigEnd, t);
+            yield return null;
+        }
+
+        resultBG.color = bgEnd;
+        resultVig.color = vigEnd;
+    }
+
+    
+    
+    private IEnumerator ExponentialMoveY(RectTransform target, float endY, float duration)
+    {
+        Vector2 startPos = target.anchoredPosition;
+        float startY = startPos.y;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = 1f - Mathf.Exp(-5f * elapsed / duration); // exponential ease
+            startPos.y = Mathf.Lerp(startY, endY, t);
+            target.anchoredPosition = startPos;
+            yield return null;
+        }
+        startPos.y = endY;
+        target.anchoredPosition = startPos;
+    }
+
+    private IEnumerator ExponentialScale(RectTransform target, Vector3 endScale, float duration)
+    {
+        Vector3 startScale = target.localScale;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = 1f - Mathf.Exp(-5f * elapsed / duration);
+            target.localScale = Vector3.Lerp(startScale, endScale, t);
+            yield return null;
+        }
+        target.localScale = endScale;
+    }
+
+    private IEnumerator ExponentialAnchorMaxY(RectTransform target, float endY, float duration)
+    {
+        Vector2 startMax = target.anchorMax;
+        float startY = startMax.y;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = 1f - Mathf.Exp(-5f * elapsed / duration);
+            startMax.y = Mathf.Lerp(startY, endY, t);
+            target.anchorMax = startMax;
+            yield return null;
+        }
+        startMax.y = endY;
+        target.anchorMax = startMax;
+    }
+
+    private IEnumerator InterpolateCrownAndTitles(
+        float crownXTarget,
+        string aTitleText,
+        string bTitleText,
+        Color aColor,
+        Color bColor,
+        float aScale,
+        float bScale
+    )
+    {
+        // Crown
+        Vector2 startPos = crown.anchoredPosition;
+        Vector2 endPos = startPos;
+        endPos.x = crownXTarget;
+
+        // Titles
+        playerATitle.text = aTitleText;
+        playerBTitle.text = bTitleText;
+        playerATitle.color = aColor;
+        playerBTitle.color = bColor;
+
+        playerATitle.rectTransform.localScale = Vector3.zero;
+        playerBTitle.rectTransform.localScale = Vector3.zero;
+
+        float elapsed = 0f;
+        float duration = 1f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = elapsed / duration;
+            crown.anchoredPosition = Vector2.Lerp(startPos, endPos, t);
+            playerATitle.rectTransform.localScale = Vector3.Lerp(Vector3.zero, Vector3.one * aScale, t);
+            playerBTitle.rectTransform.localScale = Vector3.Lerp(Vector3.zero, Vector3.one * bScale, t);
+            yield return null;
+        }
+
+        crown.anchoredPosition = endPos;
+        playerATitle.rectTransform.localScale = Vector3.one * aScale;
+        playerBTitle.rectTransform.localScale = Vector3.one * bScale;
+    }
+
+    private IEnumerator IdleScaleOscillation(RectTransform target, float minScale, float maxScale, float speed)
+    {
+        while (true)
+        {
+            float t = (Mathf.Sin(Time.unscaledTime * speed) + 1f) * 0.5f;
+            float s = Mathf.Lerp(minScale, maxScale, t);
+            target.localScale = Vector3.one * s;
+            yield return null;
+        }
+    }
+
+    private IEnumerator IdleRotationOscillation(RectTransform target, float minAngle, float maxAngle, float speed)
+    {
+        while (true)
+        {
+            float t = (Mathf.Sin(Time.unscaledTime * speed) + 1f) * 0.5f;
+            float angle = Mathf.Lerp(minAngle, maxAngle, t);
+            target.localEulerAngles = new Vector3(0, 0, angle);
+            yield return null;
+        }
     }
     
     private IEnumerator LateShaderUpdater()

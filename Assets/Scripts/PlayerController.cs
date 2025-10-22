@@ -472,6 +472,8 @@ public class PlayerController : MonoBehaviour
     {
         return _totalEyes; 
     }
+    
+    public int GetTotalScore() { return _totalScore; }
 
     public void SetTotalEyes(int value)
     {
