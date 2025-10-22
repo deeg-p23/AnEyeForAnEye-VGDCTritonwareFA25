@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 using Debug = UnityEngine.Debug;
@@ -18,6 +19,7 @@ public class PlayerController : MonoBehaviour
 
     private States _state;
     private IngredientItem _item;
+    private Recipe _recipe;
     private int _id; // dictates which player this controller is. 0: left, 1: right
     // note: very ungraceful way of referencing certain objects in GameManager ^^^
     private IngredientItem _nextIngredient;
@@ -41,6 +43,9 @@ public class PlayerController : MonoBehaviour
     public CharacterSprite character; // scriptable object containing every frame from spritesheet
 
     private Image _img;
+    public Slider frogRecipeFill;
+    public Slider ravenRecipeFill;
+    public Slider heartRecipeFill;
 
     void Start()
     {
@@ -67,7 +72,7 @@ public class PlayerController : MonoBehaviour
                 break;
             case States.Stirring:
                 activeActionPerformed = ActiveActionChange();
-                if (activeActionPerformed) EndStirEvent(); // canelled stir
+                if (activeActionPerformed) EndStirEvent(false); // cancelled stir
                 break;
             case States.Harvesting:
                 activeActionPerformed = ActiveActionChange();
@@ -262,8 +267,13 @@ public class PlayerController : MonoBehaviour
         
         // stir progress updating
         if (!activelyStirring) _stirProgress -= Time.deltaTime * 5f;
-        _stirProgress = Mathf.Clamp(_stirProgress, 0f, 100f);
-        GameManager.Instance.SetStirMeter(_id, _stirProgress);
+        _stirProgress = Mathf.Clamp(_stirProgress, 0f, _recipe.stirAmount);
+        GameManager.Instance.SetStirMeter(_id, _stirProgress, _recipe.stirAmount);
+
+        if (_stirProgress >= _recipe.stirAmount)
+        {
+            EndStirEvent(true);
+        }
         
         // eyeplot updating
         if (_state != States.Harvesting)
@@ -298,10 +308,50 @@ public class PlayerController : MonoBehaviour
         GameManager.Instance.ShowMetronome(_id);
     }
 
-    private void EndStirEvent()
+    private void EndStirEvent(bool success)
     {
-        // do not set state to idle, EndStirEvent() always called after state -> idle due to active action
+        // do not set state to idle if unsuccessful, EndStirEvent() always called after state -> idle due to active action
         GameManager.Instance.HideMetronome(_id);
+
+        // however, if successful, set state to idle to end the event
+        if (success) SubmitPotion();
+    }
+
+    private void SubmitPotion()
+    {
+        const float alpha = 0.69314718056f;
+        const float gamma = 6f;
+
+        float sA = CompareIngredientPortions(_recipe.frogPortion, _frogPortion, alpha, gamma);
+        float sB = CompareIngredientPortions(_recipe.heartPortion, _heartPortion, alpha, gamma);
+        float sC = CompareIngredientPortions(_recipe.ravenPortion, _ravenPortion, alpha, gamma);
+        float raw = (sA + sB + sC) / 3f * 100f;
+        
+        _totalScore += (int)Mathf.CeilToInt(raw);
+        GameManager.Instance.SetScoreCounter(_id, _totalScore);
+        
+        // reset player states/values
+        // _state = States.Idle;
+        _stirProgress = 0f;
+        _frogPortion = 0f;
+        _ravenPortion = 0f;
+        _heartPortion = 0f;
+        // go to next potion
+        SetRecipe(GameManager.Instance.GenerateRecipe());
+    }
+
+    private float CompareIngredientPortions(float A, float a, float alpha, float gamma)
+    {
+        A = Mathf.Clamp(A, 0, 5);
+        a = Mathf.Clamp(a, 0, 5);
+
+        float denom = Mathf.Max(A, 1f);
+        float r = Mathf.Abs(a - A) / denom;
+
+        if (r <= 0.2f)
+            return Mathf.Exp(-alpha * Mathf.Pow(r / 0.2f, 2));
+        else
+            return Mathf.Exp(-alpha) * Mathf.Exp(-gamma * (r - 0.2f));
     }
 
     private void StartHarvestEvent()
@@ -389,5 +439,13 @@ public class PlayerController : MonoBehaviour
     {
         _totalEyes = value;
         GameManager.Instance.SetEyeCounter(_id, _totalEyes);
+    }
+
+    public void SetRecipe(Recipe recipe)
+    {
+        _recipe = recipe;
+        frogRecipeFill.value = recipe.frogPortion;
+        heartRecipeFill.value = recipe.heartPortion;
+        ravenRecipeFill.value = recipe.ravenPortion;
     }
 } 

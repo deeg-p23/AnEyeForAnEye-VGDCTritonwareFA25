@@ -60,6 +60,11 @@ public class GameManager : MonoBehaviour
 
     public TMP_Text eyeCounterA;
     public TMP_Text eyeCounterB;
+    public TMP_Text scoreCounterA;
+    public TMP_Text scoreCounterB;
+    
+    // RECIPE OBJECTS
+    public Recipe tellTaleTonic;
     
     int[][] _eyePlotSpriteIndices = new int[][]
     {
@@ -123,6 +128,9 @@ public class GameManager : MonoBehaviour
         playerB.Inputs.Add("Mix", KeyCode.K);
         playerB.Inputs.Add("Harvest", KeyCode.O);
         playerB.Inputs.Add("Spin", KeyCode.P);
+        
+        playerA.SetRecipe(GenerateRecipe());
+        playerB.SetRecipe(GenerateRecipe());
         
         // poorly randomizing item placements but wtv right
         System.Random rng = new System.Random();
@@ -304,10 +312,23 @@ public class GameManager : MonoBehaviour
         else if (id == 1) metronomeB.SetActive(true); 
     }
 
-    public void SetStirMeter(int id, float value)
+    public void SetStirMeter(int id, float value, float max)
     {
-        if (id == 0) stirSliderA.value = value;
-        else if (id == 1) stirSliderB.value = value;
+        if (id == 0)
+        {
+            stirSliderA.value = value;
+            stirSliderA.maxValue = max;
+        }
+        else if (id == 1)
+        {
+            stirSliderB.value = value;
+            stirSliderB.maxValue = max;
+        }
+    }
+
+    public Recipe GenerateRecipe()
+    {
+        return tellTaleTonic;
     }
 
     public void HideMetronome(int id)
@@ -396,5 +417,11 @@ public class GameManager : MonoBehaviour
     {
         if (id == 0) eyeCounterA.text = "" + value;
         else if (id == 1) eyeCounterB.text = "" + value;
+    }
+    
+    public void SetScoreCounter(int id, int value)
+    {
+        if (id == 0) scoreCounterA.text = "" + value;
+        else if (id == 1) scoreCounterB.text = "" + value;
     }
 }
