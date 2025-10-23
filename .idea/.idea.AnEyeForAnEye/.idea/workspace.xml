@@ -6,10 +6,27 @@
   <component name="ChangeListManager">
     <list default="true" id="4c3bb625-0367-48fe-8659-98058f255a79" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.AnEyeForAnEye/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.AnEyeForAnEye/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Materials/LoadingScreen.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Materials/LoadingScreen.mat" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Prefabs/UIManager.prefab" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Prefabs/UIManager.prefab" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/SFX/Actions/Pouring.wav" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/SFX/Actions/Pouring.wav.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/SFX/Actions/Spingwheel.wav" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/SFX/Actions/Spingwheel.wav.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/SFX/Menu/tick.wav" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/SFX/Menu/tick.wav.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/SFX/OST - Gameplay.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/SFX/OST - Gameplay.mp3.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/SFX/OST - Title.wav" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/SFX/OST - Title.wav.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/SFX/Sabotages/ink.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/SFX/Sabotages/ink.mp3.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/SFX/Sabotages/slowed.wav" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/SFX/Sabotages/slowed.wav.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/SFX/Sabotages/sticky.wav" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/SFX/Sabotages/sticky.wav.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/SFX/Sabotages/swapIng.aiff" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/SFX/Sabotages/swapIng.aiff.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Scenes/SceneB.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/SceneB.unity" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/GameManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/GameManager.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Scripts/PlayerController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/PlayerController.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Scripts/SceneManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/SceneManager.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Scripts/SoundManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/SoundManager.cs" afterDir="false" />
     </list>
@@ -24,6 +41,7 @@
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/Assets/Scripts/Recipe.cs" root0="FORCE_HIGHLIGHTING" />
   </component>
+  <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
   <component name="ProjectColorInfo"><![CDATA[{
   "customColor": "",
   "associatedIndex": 7
@@ -111,13 +129,14 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1761072061135</updated>
-      <workItem from="1761072063113" duration="12916000" />
+      <workItem from="1761072063113" duration="18182000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
+  <component name="UnityCheckinConfiguration" checkUnsavedScenes="true" />
   <component name="UnityProjectConfiguration" hasMinimizedUI="true" />
   <component name="UnityProjectDiscoverer">
     <option name="hasUnityReference" value="true" />

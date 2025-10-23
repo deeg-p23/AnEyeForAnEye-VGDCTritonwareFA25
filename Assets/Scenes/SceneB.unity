@@ -5089,7 +5089,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: be78dbf8915bf6f4ba36e7b2bbfc7a21, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cm: {fileID: 0}
+  cm: {fileID: 1105016160}
   character: {fileID: 11400000, guid: d2ff8a12bc7c6df47b95ba9eedcbf686, type: 2}
   frogRecipeFill: {fileID: 1575542969}
   ravenRecipeFill: {fileID: 60444296}
@@ -11226,7 +11226,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: be78dbf8915bf6f4ba36e7b2bbfc7a21, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cm: {fileID: 0}
+  cm: {fileID: 1105016160}
   character: {fileID: 11400000, guid: e93e6164b91ed9c4d86d6022ba228dcc, type: 2}
   frogRecipeFill: {fileID: 1569329745}
   ravenRecipeFill: {fileID: 138231096}

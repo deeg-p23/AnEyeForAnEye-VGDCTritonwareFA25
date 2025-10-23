@@ -189,6 +189,7 @@ public class SceneManager : MonoBehaviour
 
         while (elapsed < duration)
         {
+            Debug.Log("stuck in closer " + elapsed);
             SoundManager.Instance.SetMusicVolume(1f - elapsed / duration);
             elapsed += Time.unscaledDeltaTime;
             float t = Mathf.Clamp01(elapsed / duration);
@@ -210,8 +211,11 @@ public class SceneManager : MonoBehaviour
         // Set initial fade
         loadingMask.GetComponent<Image>().material.SetFloat("_Fade", startFade);
         
+        Debug.Log("IM GOT THERE");
+        
         while (elapsed < duration)
         {
+            Debug.Log(elapsed);
             elapsed += Time.unscaledDeltaTime;
             float t = Mathf.Clamp01(elapsed / duration);
             float fadeValue = Mathf.Lerp(startFade, endFade, t);
@@ -251,20 +255,21 @@ public class SceneManager : MonoBehaviour
 
         do
         {
+            Debug.Log("stuck in next frame");
             await Awaitable.NextFrameAsync();
         } while (scene.progress < 0.9f);
 
         scene.allowSceneActivation = true;
+        // Time.timeScale = 1f;
 
-        while (!scene.isDone)
-        {
-            await Task.Yield(); 
-        }
-
+        Debug.Log("wtf");
+        
         HandleManagerStates(sceneName);
 
-        await WaitForStableFrame();
+        Debug.Log("IM GETTING THERE");
+        
         await OpenSceneFromLoad();
+        await WaitForStableFrame();
 
         loadingScreen.SetActive(false);
     }
@@ -308,7 +313,7 @@ public class SceneManager : MonoBehaviour
 
         resultsScreen.SetActive(true);
         
-        yield return new WaitForSecondsRealtime(1f);
+        yield return new WaitForSecondsRealtime(2f);
         
         StartCoroutine(FadeInBackgrounds(1f));
         
@@ -343,6 +348,10 @@ public class SceneManager : MonoBehaviour
             timer += Time.unscaledDeltaTime;
             yield return null;
         }
+        
+        Debug.Log(playerAScore);
+        Debug.Log(playerBScore);
+        
         playerTotalA.text = playerAScore.ToString();
         playerTotalB.text = playerBScore.ToString();
 
@@ -352,7 +361,7 @@ public class SceneManager : MonoBehaviour
             yield return StartCoroutine(InterpolateCrownAndTitles(-crownOscillationAmplitude, 
                 "VICTOR!", "LOSER...", victorColor, loserColor, titlePopScaleVictor, titlePopScaleLoser));
         }
-        else if (playerAScore > playerBScore)
+        else if (playerBScore > playerAScore)
         {
             yield return StartCoroutine(InterpolateCrownAndTitles(crownOscillationAmplitude, 
                 "LOSER...", "VICTOR!", loserColor, victorColor, titlePopScaleLoser, titlePopScaleVictor));

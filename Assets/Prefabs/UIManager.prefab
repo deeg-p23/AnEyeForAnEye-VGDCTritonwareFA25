@@ -3548,7 +3548,7 @@ GameObject:
   m_Component:
   - component: {fileID: 810033248333784002}
   - component: {fileID: 2812151721707057814}
-  - component: {fileID: 7235106006937065797}
+  - component: {fileID: 8888419420910742327}
   m_Layer: 0
   m_Name: UIManager
   m_TagString: Untagged
@@ -3613,7 +3613,7 @@ MonoBehaviour:
   resultVig: {fileID: 4481362137631785444}
   bgTargetAlpha: 0.8
   vigTargetAlpha: 1
---- !u!114 &7235106006937065797
+--- !u!114 &8888419420910742327
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -3625,71 +3625,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e16d1a55ff5e86c4886db2f25e710c47, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AllSounds:
-  - Type: 1
-    Clip: {fileID: 8300000, guid: 07827459f0235c04294c8a0bfdc075ab, type: 3}
-    Volume: 1
-    Source: {fileID: 0}
-  - Type: 0
-    Clip: {fileID: 8300000, guid: 60ba7f09b618bca49a5648edd09a73a1, type: 3}
-    Volume: 1
-    Source: {fileID: 0}
-  - Type: 2
-    Clip: {fileID: 8300000, guid: aec56d34274b04c4495a55c600c4f64a, type: 3}
-    Volume: 0.5
-    Source: {fileID: 0}
-  - Type: 3
-    Clip: {fileID: 8300000, guid: 59ac89bd454b39d44be03eaad16b9bfd, type: 3}
-    Volume: 0.5
-    Source: {fileID: 0}
-  - Type: 4
-    Clip: {fileID: 8300000, guid: b125b4f0994b76e409633e2db147f1aa, type: 3}
-    Volume: 0.5
-    Source: {fileID: 0}
-  - Type: 6
-    Clip: {fileID: 8300000, guid: 9d5aa730ea82fca4384628910856f3a2, type: 3}
-    Volume: 0.2
-    Source: {fileID: 0}
-  - Type: 5
-    Clip: {fileID: 8300000, guid: a1f0c71feae34a342ae3957f13744bf1, type: 3}
-    Volume: 0.2
-    Source: {fileID: 0}
-  - Type: 8
-    Clip: {fileID: 8300000, guid: c7530f758cea1b44ba71cda03a058e14, type: 3}
-    Volume: 0.2
-    Source: {fileID: 0}
-  - Type: 7
-    Clip: {fileID: 8300000, guid: 34fde7088e69a514e87742fbead749d9, type: 3}
-    Volume: 0.2
-    Source: {fileID: 0}
-  - Type: 15
-    Clip: {fileID: 8300000, guid: e1d70138911a4a0488aeb1ae2ccbe97e, type: 3}
-    Volume: 0.561
-    Source: {fileID: 0}
-  - Type: 11
-    Clip: {fileID: 8300000, guid: 2f3a426c41d618b49b28f9c638aae955, type: 3}
-    Volume: 0.5
-    Source: {fileID: 0}
-  - Type: 13
-    Clip: {fileID: 8300000, guid: d080f6683256b7146996cf1b05045029, type: 3}
-    Volume: 0.5
-    Source: {fileID: 0}
-  - Type: 12
-    Clip: {fileID: 8300000, guid: 014a91d5061b37441a7c55aae2b4bda1, type: 3}
-    Volume: 0.5
-    Source: {fileID: 0}
-  - Type: 14
-    Clip: {fileID: 8300000, guid: cdbaf5fa16a409640b54d93e8da2b0c2, type: 3}
-    Volume: 0.5
-    Source: {fileID: 0}
-  - Type: 9
-    Clip: {fileID: 8300000, guid: 31796d8bbef38a840b6146b64ddc7f8a, type: 3}
-    Volume: 0.5
-    Source: {fileID: 0}
-  - Type: 10
-    Clip: {fileID: 8300000, guid: bd525501e6f65d347aeb11c2f8df11c5, type: 3}
-    Volume: 0.5
-    Source: {fileID: 0}
 --- !u!1 &6778550579291152271
 GameObject:
   m_ObjectHideFlags: 0
