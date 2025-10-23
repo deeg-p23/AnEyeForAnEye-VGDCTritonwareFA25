@@ -51,20 +51,17 @@ public class SoundManager : MonoBehaviour
     // 'static' sounds
     private AudioSource _bgMusicSource;
     
-    void Start()
+    void Awake()
     {
         //Assign singleton
         Instance = this;
         
         InitializeSounds();
- 
-        Debug.Log("RUNNING");
         
         //Set up sounds
         foreach(var s in AllSounds)
         {
             _soundDictionary[s.Type] = s;
-            Debug.Log(s + " " + s.Type);
         }
     }
 
@@ -205,7 +202,6 @@ public class SoundManager : MonoBehaviour
 
         if (type == SoundType.BG_Music)
         {
-            Debug.Log(type);
             _bgMusicSource = audioSrc;
         }
         else if (type == SoundType.BG_Title)
@@ -217,8 +213,6 @@ public class SoundManager : MonoBehaviour
         {
             Destroy(soundObj, s.Clip.length);
         }
-        
-        Debug.Log(type);
     }
  
     //Call this method to change music tracks

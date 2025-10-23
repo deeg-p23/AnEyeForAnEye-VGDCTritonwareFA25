@@ -245,7 +245,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 0}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -3613,6 +3613,16 @@ MonoBehaviour:
   resultVig: {fileID: 4481362137631785444}
   bgTargetAlpha: 0.8
   vigTargetAlpha: 1
+  playerIconA: {fileID: 7391769388403676022}
+  playerIconB: {fileID: 6555138618900872485}
+  playerALoserIcon: {fileID: -4694522510765528106, guid: 9710f8c08794886498160ffc7965bdba, type: 3}
+  playerAVictorIcon: {fileID: 8123486036782296886, guid: 34bf8e8b44addf1469869782b1d3df9c, type: 3}
+  playerBLoserIcon: {fileID: -4649619915254577676, guid: 99ccd3674d5abe64eb50370b8f9a1f19, type: 3}
+  playerBVictorIcon: {fileID: 8433048221897418952, guid: 3d6aee53ec9c69245a64647e05e0561c, type: 3}
+  playerEyeCountA: {fileID: 8953707346264659661}
+  playerEyeCountB: {fileID: 1252028961031572207}
+  playerScoreCountA: {fileID: 2883351698027327869}
+  playerScoreCountB: {fileID: 412008160605836245}
 --- !u!114 &8888419420910742327
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3837,7 +3847,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -4649619915254577676, guid: 99ccd3674d5abe64eb50370b8f9a1f19, type: 3}
+  m_Sprite: {fileID: -6496715699370282178, guid: 75eb08ef4a2e73348931270aaffc1434, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -4489,7 +4499,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 8123486036782296886, guid: 34bf8e8b44addf1469869782b1d3df9c, type: 3}
+  m_Sprite: {fileID: 8120431558141409547, guid: 843aa285cb268ab41b4a5570dd831949, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1

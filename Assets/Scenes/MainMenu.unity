@@ -1492,6 +1492,14 @@ PrefabInstance:
       propertyPath: pauseScreenAccessable
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3353865525319645751, guid: ef553aa96d0daab40868d77ad6aa61c5, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 423
+      objectReference: {fileID: 0}
+    - target: {fileID: 5682024127797708571, guid: ef553aa96d0daab40868d77ad6aa61c5, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5701796651320785755, guid: ef553aa96d0daab40868d77ad6aa61c5, type: 3}
       propertyPath: m_IsActive
       value: 0
@@ -1503,6 +1511,10 @@ PrefabInstance:
     - target: {fileID: 7188489895794277017, guid: ef553aa96d0daab40868d77ad6aa61c5, type: 3}
       propertyPath: m_SizeDelta.y
       value: 613.21216
+      objectReference: {fileID: 0}
+    - target: {fileID: 8015449118519226870, guid: ef553aa96d0daab40868d77ad6aa61c5, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

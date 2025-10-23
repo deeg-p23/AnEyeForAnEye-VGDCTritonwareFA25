@@ -7728,6 +7728,13 @@ MonoBehaviour:
   ingredientMaterialB: {fileID: 2100000, guid: 0e60d5139798e434fb50103fec1aeb7e, type: 2}
   recipes:
   - {fileID: 11400000, guid: 4dc6b6e84750e01488780e1fb1746697, type: 2}
+  - {fileID: 11400000, guid: f72bde3d8e344f44298d9bf33ca242dd, type: 2}
+  - {fileID: 11400000, guid: 8937bccfd1d5a0f4293ad4f16a0f9fb4, type: 2}
+  - {fileID: 11400000, guid: 687dda662b9267740a4330baa1065450, type: 2}
+  - {fileID: 11400000, guid: fb3d4a742b2b7f84ab10c570888b1cc7, type: 2}
+  - {fileID: 11400000, guid: cd914d37770f0624491c2f76f9b62b7a, type: 2}
+  - {fileID: 11400000, guid: eae9fe04e410b9d46a49ee03e442d941, type: 2}
+  - {fileID: 11400000, guid: fb26e9318f58a374cb184d8dce59f4c0, type: 2}
   clockPivot: {fileID: 330367781}
   sabotageWheel: {fileID: 181491901}
   paymentWheel: {fileID: 868868978}

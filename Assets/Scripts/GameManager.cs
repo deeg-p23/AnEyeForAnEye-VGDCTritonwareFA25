@@ -218,7 +218,7 @@ public class GameManager : MonoBehaviour
         gameIsRunning = true;
         SoundManager.Instance.Play(SoundManager.SoundType.BG_Music);
 
-        gameRuntime = 290f;
+        gameRuntime = 0f;
     }
 
     void StartEvilHour()

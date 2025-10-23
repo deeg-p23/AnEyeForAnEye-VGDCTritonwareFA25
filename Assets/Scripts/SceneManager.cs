@@ -72,6 +72,8 @@ public class SceneManager : MonoBehaviour
             SoundManager.Instance.ResumeMusic();
             if (GameManager.Instance.gameRuntime > 0.5f) SoundManager.Instance.Play(SoundManager.SoundType.Unpause);
         }
+        
+        Debug.Log("finishd handling game unpause");
     }
 
     public void ResumeGame()
@@ -156,11 +158,12 @@ public class SceneManager : MonoBehaviour
     // very scuffed state-based setter
     private void HandleManagerStates(string sceneName)
     {
+        Debug.Log("managing states");
         switch (sceneName)
         {
             case "MainMenu":
                 pauseScreenAccessable = false;
-                SetGamePaused(false);
+                Time.timeScale = 1f;
 
                 pauseScreen.SetActive(false);
                 // AcquirePlayerStates();
@@ -175,6 +178,7 @@ public class SceneManager : MonoBehaviour
 
                 break;
         }
+        Debug.Log("managing states over");
     }
     
     private async Task CloseSceneToLoad()
@@ -189,13 +193,20 @@ public class SceneManager : MonoBehaviour
 
         while (elapsed < duration)
         {
-            Debug.Log("stuck in closer " + elapsed);
+            Debug.Log("closing scene: " + elapsed + " " + Time.timeScale);
             SoundManager.Instance.SetMusicVolume(1f - elapsed / duration);
+            Debug.Log("...");
             elapsed += Time.unscaledDeltaTime;
+            Debug.Log("...");
             float t = Mathf.Clamp01(elapsed / duration);
+            Debug.Log("...");
             float fadeValue = Mathf.Lerp(startFade, endFade, t);
-            loadingMask.GetComponent<Image>().material.SetFloat("_Fade", fadeValue);
-            await Awaitable.NextFrameAsync();
+            Debug.Log("...");
+            loadingMask?.GetComponent<Image>()?.material.SetFloat("_Fade", fadeValue);
+            Debug.Log("help");
+            await Task.Yield();
+            Debug.Log("gerp");
+
         }
 
         loadingMask.GetComponent<Image>().material.SetFloat("_Fade", endFade);
@@ -211,16 +222,13 @@ public class SceneManager : MonoBehaviour
         // Set initial fade
         loadingMask.GetComponent<Image>().material.SetFloat("_Fade", startFade);
         
-        Debug.Log("IM GOT THERE");
-        
         while (elapsed < duration)
         {
-            Debug.Log(elapsed);
             elapsed += Time.unscaledDeltaTime;
             float t = Mathf.Clamp01(elapsed / duration);
             float fadeValue = Mathf.Lerp(startFade, endFade, t);
             loadingMask.GetComponent<Image>().material.SetFloat("_Fade", fadeValue);
-            await Awaitable.NextFrameAsync();
+            await Task.Yield();
         }
         
         loadingMask.GetComponent<Image>().material.SetFloat("_Fade", endFade);
@@ -239,37 +247,37 @@ public class SceneManager : MonoBehaviour
         }
     }
 
+    private bool _isSceneUnloading;
+
     public async Task LoadScene(string sceneName)
     {
-        // player cannot toggle pause, and non-time-based processes in game remain paused
-        pauseScreenAccessable = false;
-
-        AsyncOperation scene = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
-        scene.allowSceneActivation = false;
-
-        loadingScreen.SetActive(true);
-
+        _isSceneUnloading = true;
         await CloseSceneToLoad();
-        
+
+        var op = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(sceneName);
+        op.allowSceneActivation = false;
+
         resultsScreen.SetActive(false);
 
-        do
+        while (op.progress < 0.9f)
         {
-            Debug.Log("stuck in next frame");
+            if (!_isSceneUnloading) return; // early out
             await Awaitable.NextFrameAsync();
-        } while (scene.progress < 0.9f);
+        }
 
-        scene.allowSceneActivation = true;
-        // Time.timeScale = 1f;
+        op.allowSceneActivation = true;
 
-        Debug.Log("wtf");
-        
+        while (!op.isDone)
+        {
+            if (!_isSceneUnloading) return;
+            await Task.Yield();
+        }
+
         HandleManagerStates(sceneName);
+        _isSceneUnloading = false;
 
-        Debug.Log("IM GETTING THERE");
-        
-        await OpenSceneFromLoad();
         await WaitForStableFrame();
+        await OpenSceneFromLoad();
 
         loadingScreen.SetActive(false);
     }
@@ -287,7 +295,7 @@ public class SceneManager : MonoBehaviour
     [Header("Config")]
     [SerializeField] private float introDuration = 1f;
     [SerializeField] private float oscillationDuration = 5f;
-    [SerializeField] private float crownOscillationAmplitude = 350f;
+    [SerializeField] private float crownOscillationAmplitude = 20f;
     [SerializeField] private float crownOscillationSpeed = 2f;
     [SerializeField] private float titlePopScaleVictor = 1.3f;
     [SerializeField] private float titlePopScaleLoser = 1.0f;
@@ -304,16 +312,48 @@ public class SceneManager : MonoBehaviour
     [SerializeField] private Image resultVig;
     [SerializeField] private float bgTargetAlpha = 0.8f;
     [SerializeField] private float vigTargetAlpha = 1.0f;
+
+    [SerializeField] private Image playerIconA;
+    [SerializeField] private Image playerIconB;
+    
+    [SerializeField] private Sprite playerALoserIcon;
+    [SerializeField] private Sprite playerAVictorIcon;
+    [SerializeField] private Sprite playerBLoserIcon;
+    [SerializeField] private Sprite playerBVictorIcon;
+
+    [SerializeField] private TMP_Text playerEyeCountA;
+    [SerializeField] private TMP_Text playerEyeCountB;
+    [SerializeField] private TMP_Text playerScoreCountA;
+    [SerializeField] private TMP_Text playerScoreCountB;
     
     public IEnumerator ResultsCoroutine()
     {
         // compute end game scores
-        int playerAScore = GameManager.Instance.playerA.GetTotalEyes() * 15 + GameManager.Instance.playerA.GetTotalEyes();
-        int playerBScore = GameManager.Instance.playerB.GetTotalEyes() * 15 + GameManager.Instance.playerB.GetTotalEyes();
+        int playerAScore = GameManager.Instance.playerA.GetTotalEyes() * 3 + GameManager.Instance.playerA.GetTotalScore();
+        int playerBScore = GameManager.Instance.playerB.GetTotalEyes() * 3 + GameManager.Instance.playerB.GetTotalScore();
 
         resultsScreen.SetActive(true);
+        resultBG.color = new Color(resultBG.color.r, resultBG.color.g, resultBG.color.b, 0f);
+        resultVig.color = new Color(resultVig.color.r, resultVig.color.g, resultVig.color.b, 0f);
+        iconsPanel.localScale = Vector3.zero;
+        playerATitle.rectTransform.localScale = Vector3.zero;
+        playerBTitle.rectTransform.localScale = Vector3.zero;
+        buttonsPanel.anchorMax = new Vector2(buttonsPanel.anchorMax.x, 0f);
+        Vector2 initialResultsPos = resultsPanel.anchoredPosition;
+        initialResultsPos.y = 500f;
+        resultsPanel.anchoredPosition = initialResultsPos;
+        playerTotalA.text = "0";
+        playerTotalB.text = "0";
+        playerATitle.text = "";
+        playerBTitle.text = "";
+
+        playerEyeCountA.text = GameManager.Instance.playerA.GetTotalEyes()+"<size=48><color=#ffffff><size=32>x</size>3";
+        playerEyeCountB.text = GameManager.Instance.playerB.GetTotalEyes()+"<size=48><color=#ffffff><size=32>x</size>3";
+
+        playerScoreCountA.text = GameManager.Instance.playerA.GetTotalScore() + "";
+        playerScoreCountB.text = GameManager.Instance.playerB.GetTotalScore() + "";
         
-        yield return new WaitForSecondsRealtime(2f);
+        yield return new WaitForSecondsRealtime(3f);
         
         StartCoroutine(FadeInBackgrounds(1f));
         
@@ -324,7 +364,6 @@ public class SceneManager : MonoBehaviour
         yield return StartCoroutine(ExponentialMoveY(resultsPanel, 0, introDuration));
 
         // 2. Animate Icons Panel scale 0 -> 1
-        iconsPanel.localScale = Vector3.zero;
         yield return StartCoroutine(ExponentialScale(iconsPanel, Vector3.one, introDuration));
 
         // 2.5 Play fanfare sound
@@ -332,6 +371,7 @@ public class SceneManager : MonoBehaviour
 
         // 3. Oscillate crown + count player scores for 5s
         float timer = 0f;
+
         while (timer < oscillationDuration)
         {
             // oscillate crown left-right
@@ -348,21 +388,23 @@ public class SceneManager : MonoBehaviour
             timer += Time.unscaledDeltaTime;
             yield return null;
         }
-        
-        Debug.Log(playerAScore);
-        Debug.Log(playerBScore);
-        
         playerTotalA.text = playerAScore.ToString();
         playerTotalB.text = playerBScore.ToString();
 
         // 4. Determine winner
         if (playerAScore > playerBScore)
         {
+            // player A won
+            playerIconA.sprite = playerAVictorIcon;
+            playerIconB.sprite = playerBLoserIcon;
             yield return StartCoroutine(InterpolateCrownAndTitles(-crownOscillationAmplitude, 
                 "VICTOR!", "LOSER...", victorColor, loserColor, titlePopScaleVictor, titlePopScaleLoser));
         }
-        else if (playerBScore > playerAScore)
+        else if (playerAScore > playerBScore)
         {
+            // player B won
+            playerIconA.sprite = playerALoserIcon;
+            playerIconB.sprite = playerBVictorIcon;
             yield return StartCoroutine(InterpolateCrownAndTitles(crownOscillationAmplitude, 
                 "LOSER...", "VICTOR!", loserColor, victorColor, titlePopScaleLoser, titlePopScaleVictor));
         }
@@ -474,12 +516,12 @@ public class SceneManager : MonoBehaviour
         float bScale
     )
     {
-        // Crown
+        // Crown start/end
         Vector2 startPos = crown.anchoredPosition;
         Vector2 endPos = startPos;
         endPos.x = crownXTarget;
 
-        // Titles
+        // Titles setup
         playerATitle.text = aTitleText;
         playerBTitle.text = bTitleText;
         playerATitle.color = aColor;
@@ -494,10 +536,12 @@ public class SceneManager : MonoBehaviour
         while (elapsed < duration)
         {
             elapsed += Time.unscaledDeltaTime;
-            float t = elapsed / duration;
-            crown.anchoredPosition = Vector2.Lerp(startPos, endPos, t);
-            playerATitle.rectTransform.localScale = Vector3.Lerp(Vector3.zero, Vector3.one * aScale, t);
-            playerBTitle.rectTransform.localScale = Vector3.Lerp(Vector3.zero, Vector3.one * bScale, t);
+            float u = Mathf.Clamp01(elapsed / duration);
+            float t = 1f - Mathf.Exp(-5f * u); // exponential ease-in
+
+            crown.anchoredPosition = Vector2.LerpUnclamped(startPos, endPos, t);
+            playerATitle.rectTransform.localScale = Vector3.LerpUnclamped(Vector3.zero, Vector3.one * aScale, t);
+            playerBTitle.rectTransform.localScale = Vector3.LerpUnclamped(Vector3.zero, Vector3.one * bScale, t);
             yield return null;
         }
 
@@ -505,6 +549,7 @@ public class SceneManager : MonoBehaviour
         playerATitle.rectTransform.localScale = Vector3.one * aScale;
         playerBTitle.rectTransform.localScale = Vector3.one * bScale;
     }
+
 
     private IEnumerator IdleScaleOscillation(RectTransform target, float minScale, float maxScale, float speed)
     {
