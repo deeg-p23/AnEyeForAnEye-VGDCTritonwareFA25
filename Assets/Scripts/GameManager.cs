@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -192,7 +193,7 @@ public class GameManager : MonoBehaviour
 
         RandomizeIngredients(upItemA, rightItemA, leftItemA, itemsToStore, rng);
         RandomizeIngredients(upItemB, rightItemB, leftItemB, itemsToStore, rng);
-
+        
         BeginGame();
     }
 
@@ -213,8 +214,10 @@ public class GameManager : MonoBehaviour
         else if (id == 1) metronomePivotB.rotation = Quaternion.Euler(0f, 0f,angle);
     }
 
-    void BeginGame()
+    async void BeginGame()
     {
+        await Task.Yield();
+        
         gameIsRunning = true;
         SoundManager.Instance.Play(SoundManager.SoundType.BG_Music);
 

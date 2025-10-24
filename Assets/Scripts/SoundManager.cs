@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine.SceneManagement;
 
 public class SoundManager : MonoBehaviour
 {
@@ -188,6 +189,10 @@ public class SoundManager : MonoBehaviour
             Debug.LogWarning($"Sound type {type} not found!");
             return;
         }
+        
+        // hack to remove random BG title bug
+        if (type == SoundType.BG_Title &&
+            UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "SceneB") return;
  
         //Creates a new sound object
         var soundObj = new GameObject($"Sound_{type}");
@@ -235,12 +240,16 @@ public class SoundManager : MonoBehaviour
         _bgMusicSource.Play();
     }
     
-    public void PauseMusic() { _bgMusicSource.Pause(); }
-    public void ResumeMusic() { _bgMusicSource.Play(); }
+    public void PauseMusic() { if (_bgMusicSource != null )_bgMusicSource.Pause(); }
+    public void ResumeMusic() { if (_bgMusicSource != null )_bgMusicSource.Play(); }
     
-    public float GetMusicTime() { return _bgMusicSource.time; }
+    public float GetMusicTime()
+    {
+        if (_bgMusicSource == null) return 0f; return _bgMusicSource.time; }
     
-    public void SetMusicVolume(float volume) { _bgMusicSource.volume = volume; }
+    public void SetMusicVolume(float volume) { if (_bgMusicSource != null ) _bgMusicSource.volume = volume; }
 
-    public void SetMusicTime(float time) { _bgMusicSource.time = time; } // FOR DEBUGGING ONLY
+    public void SetMusicTime(float time) { if (_bgMusicSource != null ) _bgMusicSource.time = time; } // FOR DEBUGGING ONLY
+    
+    public bool IsMusicReady => _bgMusicSource != null;
 }

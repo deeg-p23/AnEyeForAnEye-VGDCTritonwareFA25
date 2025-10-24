@@ -185,54 +185,54 @@ public class SceneManager : MonoBehaviour
     {
         float duration = 1f;
         float elapsed = 0f;
-        float startFade = 1f;   // fully opaque
-        float endFade = 0f;     // fully transparent
+        float startFade = 1f;
+        float endFade = 0f;
 
-        // Set initial fade
-        loadingMask.GetComponent<Image>().material.SetFloat("_Fade", startFade);
+        // Make sure the mask is active and visible
+        loadingMask.SetActive(true);
+
+        Image maskImage = loadingMask.GetComponent<Image>();
+        maskImage.material.SetFloat("_Fade", startFade);
 
         while (elapsed < duration)
         {
-            Debug.Log("closing scene: " + elapsed + " " + Time.timeScale);
             SoundManager.Instance.SetMusicVolume(1f - elapsed / duration);
-            Debug.Log("...");
             elapsed += Time.unscaledDeltaTime;
-            Debug.Log("...");
             float t = Mathf.Clamp01(elapsed / duration);
-            Debug.Log("...");
             float fadeValue = Mathf.Lerp(startFade, endFade, t);
-            Debug.Log("...");
-            loadingMask?.GetComponent<Image>()?.material.SetFloat("_Fade", fadeValue);
-            Debug.Log("help");
+            maskImage.material.SetFloat("_Fade", fadeValue);
             await Task.Yield();
-            Debug.Log("gerp");
-
         }
 
-        loadingMask.GetComponent<Image>().material.SetFloat("_Fade", endFade);
+        maskImage.material.SetFloat("_Fade", endFade);
     }
+
 
     private async Task OpenSceneFromLoad()
     {
         float duration = 1f;
         float elapsed = 0f;
-        float startFade = 0f;   // fully transparent
-        float endFade = 1f;     // fully opaque
-        
-        // Set initial fade
-        loadingMask.GetComponent<Image>().material.SetFloat("_Fade", startFade);
-        
+        float startFade = 0f;
+        float endFade = 1f;
+
+        // Ensure it’s active
+        loadingMask.SetActive(true);
+
+        Image maskImage = loadingMask.GetComponent<Image>();
+        maskImage.material.SetFloat("_Fade", startFade);
+
         while (elapsed < duration)
         {
             elapsed += Time.unscaledDeltaTime;
             float t = Mathf.Clamp01(elapsed / duration);
             float fadeValue = Mathf.Lerp(startFade, endFade, t);
-            loadingMask.GetComponent<Image>().material.SetFloat("_Fade", fadeValue);
+            maskImage.material.SetFloat("_Fade", fadeValue);
             await Task.Yield();
         }
-        
-        loadingMask.GetComponent<Image>().material.SetFloat("_Fade", endFade);
+
+        maskImage.material.SetFloat("_Fade", endFade);
     }
+
 
 
     // wait helper: checks that frames are stable after completing a scene load before playing UI animations.
@@ -252,6 +252,8 @@ public class SceneManager : MonoBehaviour
     public async Task LoadScene(string sceneName)
     {
         _isSceneUnloading = true;
+        
+        loadingScreen.SetActive(true);
         await CloseSceneToLoad();
 
         var op = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(sceneName);
@@ -295,7 +297,7 @@ public class SceneManager : MonoBehaviour
     [Header("Config")]
     [SerializeField] private float introDuration = 1f;
     [SerializeField] private float oscillationDuration = 5f;
-    [SerializeField] private float crownOscillationAmplitude = 20f;
+    [SerializeField] private float crownOscillationAmplitude = 350f;
     [SerializeField] private float crownOscillationSpeed = 2f;
     [SerializeField] private float titlePopScaleVictor = 1.3f;
     [SerializeField] private float titlePopScaleLoser = 1.0f;
@@ -320,6 +322,8 @@ public class SceneManager : MonoBehaviour
     [SerializeField] private Sprite playerAVictorIcon;
     [SerializeField] private Sprite playerBLoserIcon;
     [SerializeField] private Sprite playerBVictorIcon;
+    [SerializeField] private Sprite playerAIdleIcon;
+    [SerializeField] private Sprite playerBIdleIcon;
 
     [SerializeField] private TMP_Text playerEyeCountA;
     [SerializeField] private TMP_Text playerEyeCountB;
@@ -347,11 +351,17 @@ public class SceneManager : MonoBehaviour
         playerATitle.text = "";
         playerBTitle.text = "";
 
+        crown.anchorMin = new Vector2(0.3f, 0.625f);
+        crown.anchorMax = new Vector2(0.7f, 0.775f);
+
         playerEyeCountA.text = GameManager.Instance.playerA.GetTotalEyes()+"<size=48><color=#ffffff><size=32>x</size>3";
         playerEyeCountB.text = GameManager.Instance.playerB.GetTotalEyes()+"<size=48><color=#ffffff><size=32>x</size>3";
 
         playerScoreCountA.text = GameManager.Instance.playerA.GetTotalScore() + "";
         playerScoreCountB.text = GameManager.Instance.playerB.GetTotalScore() + "";
+
+        playerIconA.sprite = playerAIdleIcon;
+        playerIconB.sprite = playerBIdleIcon;
         
         yield return new WaitForSecondsRealtime(3f);
         
@@ -371,14 +381,18 @@ public class SceneManager : MonoBehaviour
 
         // 3. Oscillate crown + count player scores for 5s
         float timer = 0f;
+        float crownStartAnchorX = 0.0f;
+        float crownEndAnchorX   = 0.55f;
 
         while (timer < oscillationDuration)
         {
-            // oscillate crown left-right
-            float oscillation = Mathf.Sin(timer * crownOscillationSpeed) * crownOscillationAmplitude;
-            Vector2 crownPos = crown.anchoredPosition;
-            crownPos.x = oscillation;
-            crown.anchoredPosition = crownPos;
+            // oscillate crown anchorMin.x between 0.0 and 0.55
+            float oscillation = Mathf.Sin(timer * crownOscillationSpeed) * 0.5f + 0.5f;
+            oscillation = Mathf.Lerp(crownStartAnchorX, crownEndAnchorX, oscillation);
+
+            Vector2 anchorMin = crown.anchorMin;
+            anchorMin.x = oscillation;
+            crown.anchorMin = anchorMin;
 
             // count totals
             float lerpT = timer / oscillationDuration;
@@ -388,6 +402,7 @@ public class SceneManager : MonoBehaviour
             timer += Time.unscaledDeltaTime;
             yield return null;
         }
+        
         playerTotalA.text = playerAScore.ToString();
         playerTotalB.text = playerBScore.ToString();
 
@@ -400,7 +415,7 @@ public class SceneManager : MonoBehaviour
             yield return StartCoroutine(InterpolateCrownAndTitles(-crownOscillationAmplitude, 
                 "VICTOR!", "LOSER...", victorColor, loserColor, titlePopScaleVictor, titlePopScaleLoser));
         }
-        else if (playerAScore > playerBScore)
+        else if (playerBScore > playerAScore)
         {
             // player B won
             playerIconA.sprite = playerALoserIcon;
@@ -516,10 +531,10 @@ public class SceneManager : MonoBehaviour
         float bScale
     )
     {
-        // Crown start/end
-        Vector2 startPos = crown.anchoredPosition;
-        Vector2 endPos = startPos;
-        endPos.x = crownXTarget;
+        // remap crownXTarget: negative -> 0.0 (player A), positive -> 0.55 (player B), zero -> midpoint
+        float targetAnchorX = (crownXTarget > 0) ? 0.55f : (crownXTarget < 0) ? 0.0f : 0.275f;
+
+        float startAnchorX = crown.anchorMin.x;
 
         // Titles setup
         playerATitle.text = aTitleText;
@@ -539,17 +554,24 @@ public class SceneManager : MonoBehaviour
             float u = Mathf.Clamp01(elapsed / duration);
             float t = 1f - Mathf.Exp(-5f * u); // exponential ease-in
 
-            crown.anchoredPosition = Vector2.LerpUnclamped(startPos, endPos, t);
+            // interpolate anchorMin.x only
+            Vector2 min = crown.anchorMin;
+            min.x = Mathf.Lerp(startAnchorX, targetAnchorX, t);
+            crown.anchorMin = min;
+
             playerATitle.rectTransform.localScale = Vector3.LerpUnclamped(Vector3.zero, Vector3.one * aScale, t);
             playerBTitle.rectTransform.localScale = Vector3.LerpUnclamped(Vector3.zero, Vector3.one * bScale, t);
             yield return null;
         }
 
-        crown.anchoredPosition = endPos;
+        // set final anchorMin.x
+        Vector2 finalMin = crown.anchorMin;
+        finalMin.x = targetAnchorX;
+        crown.anchorMin = finalMin;
+
         playerATitle.rectTransform.localScale = Vector3.one * aScale;
         playerBTitle.rectTransform.localScale = Vector3.one * bScale;
     }
-
 
     private IEnumerator IdleScaleOscillation(RectTransform target, float minScale, float maxScale, float speed)
     {

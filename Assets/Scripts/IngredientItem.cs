@@ -14,9 +14,10 @@ public class IngredientItem : MonoBehaviour
     private Image _image;
     private ItemType _itemType;
 
-    void OnValidate()
+    void Awake()
     {
-        _image = GetComponent<Image>();
+        if (_image == null)
+            _image = GetComponent<Image>();
     }
     
     public void SetItem(ItemType itemType)

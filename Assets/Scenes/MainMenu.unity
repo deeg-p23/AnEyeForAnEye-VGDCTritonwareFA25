@@ -1489,6 +1489,14 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2812151721707057814, guid: ef553aa96d0daab40868d77ad6aa61c5, type: 3}
+      propertyPath: playerAIdleIcon
+      value: 
+      objectReference: {fileID: 8120431558141409547, guid: 843aa285cb268ab41b4a5570dd831949, type: 3}
+    - target: {fileID: 2812151721707057814, guid: ef553aa96d0daab40868d77ad6aa61c5, type: 3}
+      propertyPath: playerBIdleIcon
+      value: 
+      objectReference: {fileID: -6496715699370282178, guid: 75eb08ef4a2e73348931270aaffc1434, type: 3}
+    - target: {fileID: 2812151721707057814, guid: ef553aa96d0daab40868d77ad6aa61c5, type: 3}
       propertyPath: pauseScreenAccessable
       value: 0
       objectReference: {fileID: 0}
