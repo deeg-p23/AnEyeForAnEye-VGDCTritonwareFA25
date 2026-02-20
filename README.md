@@ -9,5 +9,3 @@ If you have a friend next to you, feel free to try it out for yourselves [here](
 <p align="center">
   <img src="https://github.com/user-attachments/assets/f180fe12-3afa-420f-9437-fce9613f7638" alt="Gameplay" width="75%">
 </p>
-
-> *Note: Measurements are approximate and may vary slightly between trials.*
